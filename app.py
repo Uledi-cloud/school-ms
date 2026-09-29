@@ -1,11 +1,11 @@
 from flask import (Flask, render_template, redirect, url_for, flash,
-                   request, abort, Blueprint)
+                   request, abort, Blueprint, jsonify)
 from flask_login import LoginManager, login_required, current_user
-from datetime import datetime
+from datetime import datetime, date
 
 from config import Config
 from models import (db, User, Class, Stream, Staff, Pupil, Examination,
-                    Subject, Result, Notification, AuditLog)
+                    Subject, Result, Notification, AuditLog, TermBoundary)
 from forms import (PupilForm, ClassForm, StreamForm, StaffForm,
                    ExaminationForm, NotificationForm)
 from auth import auth_bp
@@ -27,6 +27,93 @@ def load_user(uid):
 
 
 app.register_blueprint(auth_bp)
+
+
+# ================= MY ELITE ACADEMIA CONFIGURATION =================
+CURRICULUM_SUBJECTS = {
+    'Baby Class':     ['Kiswahili', 'English', 'Mathematics', 'Arts and Sports',
+                       'Health Care and Environment', 'Computer', 'French'],
+    'Middle Class':   ['Kiswahili', 'English', 'Mathematics', 'Arts and Sports',
+                       'Health Care and Environment', 'Computer', 'French'],
+    'Top Class':      ['Kiswahili', 'English', 'Mathematics', 'Arts and Sports',
+                       'Health Care and Environment', 'Computer', 'French'],
+    'Standard One':   ['Kiswahili', 'English', 'Mathematics', 'Arts and Sports',
+                       'Health Care and Environment', 'Computer', 'French'],
+    'Standard Two':   ['Kiswahili', 'English', 'Mathematics', 'Arts and Sports',
+                       'Health Care and Environment', 'Computer', 'French'],
+    'Standard Three': ['Kiswahili', 'English', 'Mathematics', 'Science',
+                       'Geography and Environment', 'Historia ya Tanzania na Maadili',
+                       'Arts and Sports', 'Computer', 'French'],
+    'Standard Four':  ['Kiswahili', 'English', 'Mathematics', 'Science',
+                       'Geography and Environment', 'Historia ya Tanzania na Maadili',
+                       'Arts and Sports', 'Computer', 'French'],
+    'Standard Five':  ['Kiswahili', 'English', 'Mathematics', 'Science',
+                       'Geography and Environment', 'Historia ya Tanzania na Maadili',
+                       'Arts and Sports', 'Computer', 'French'],
+    'Standard Six':   ['Kiswahili', 'English', 'Mathematics', 'Science',
+                       'Social Studies', 'Civic and Moral Education',
+                       'Vocational Skills and Fine Arts', 'Computer', 'French'],
+    'Standard Seven': ['Kiswahili', 'English', 'Mathematics', 'Science',
+                       'Social Studies', 'Civic and Moral Education']
+}
+
+ACADEMIC_SCHEDULE = {
+    'Term I': {
+        'January':   'January Monthly Exam',
+        'February':  'February Monthly Exam',
+        'March':     'March Mid-Term Exam',
+        'April':     'April Monthly Exam',
+        'May':       'May Terminal Exam'
+    },
+    'Term II': {
+        'July':      'July Monthly Exam',
+        'August':    'August Monthly Exam',
+        'September': 'September Mid-Term Exam',
+        'October':   'October Monthly Exam',
+        'November':  'Annual Exam'
+    }
+}
+
+SUBJECT_COLORS = {
+    'Kiswahili':      {'border': '#3b82f6', 'bg': '#eff6ff', 'text': '#1d4ed8'},
+    'English':        {'border': '#ec4899', 'bg': '#fdf2f8', 'text': '#be185d'},
+    'Mathematics':    {'border': '#f59e0b', 'bg': '#fef3c7', 'text': '#b45309'},
+    'Science':        {'border': '#10b981', 'bg': '#ecfdf5', 'text': '#047857'},
+    'Geography and Environment': {'border': '#8b5cf6', 'bg': '#f5f3ff', 'text': '#6d28d9'},
+    'Social Studies': {'border': '#8b5cf6', 'bg': '#f5f3ff', 'text': '#6d28d9'},
+    'Historia ya Tanzania na Maadili': {'border': '#06b6d4', 'bg': '#ecfeff', 'text': '#0e7490'},
+    'Civic and Moral Education': {'border': '#06b6d4', 'bg': '#ecfeff', 'text': '#0e7490'},
+    'Arts and Sports': {'border': '#f43f5e', 'bg': '#fff1f2', 'text': '#be123c'},
+    'Vocational Skills and Fine Arts': {'border': '#f43f5e', 'bg': '#fff1f2', 'text': '#be123c'},
+    'Health Care and Environment': {'border': '#10b981', 'bg': '#ecfdf5', 'text': '#047857'},
+    'Computer':       {'border': '#64748b', 'bg': '#f1f5f9', 'text': '#475569'},
+    'French':         {'border': '#a855f7', 'bg': '#faf5ff', 'text': '#7e22ce'}
+}
+
+
+def tanzanian_grade(average):
+    if average is None: return {'grade': '-', 'remarks': '-'}
+    if average >= 81: return {'grade': 'A', 'remarks': 'Excellent'}
+    if average >= 61: return {'grade': 'B', 'remarks': 'Very Good'}
+    if average >= 41: return {'grade': 'C', 'remarks': 'Good'}
+    if average >= 21: return {'grade': 'D', 'remarks': 'Satisfactory'}
+    return {'grade': 'E', 'remarks': 'Fail'}
+
+
+def head_teacher_comment(avg):
+    if avg >= 81: return "An exceptional academic performance overall. She/He has demonstrated exemplary leadership and analytical capacity. Keep maintaining this golden benchmark in future tiers."
+    if avg >= 61: return "A highly commendable term transcript showing great devotion. With steady dedication to consistency, securing a clean 'A' bracket next cycle is highly achievable."
+    if avg >= 41: return "Satisfactory progress achieved. However, room for enhancement remains vast. Focused evening studies and routine homework supervision are strongly recommended."
+    if avg >= 21: return "Academic performance is currently precarious. The student must restrict peripheral extracurricular focus and immediately enroll in our targeted weekend clinic tracks."
+    return "Critical academic intervention required. Please schedule an executive physical conference with my office immediately to chart an urgent recovery strategy."
+
+
+def dean_comment(avg):
+    if avg >= 81: return "Mastery of core syllabus objectives is clearly visible across all terminal metrics. Excellent analytical competency and structural problem-solving abilities."
+    if avg >= 61: return "Good curriculum milestone absorption. The learner demonstrates strong potential; pushing further on precision engineering in mathematics will yield stellar outcomes."
+    if avg >= 41: return "Basic competencies verified. Strategic remediation is advised on challenging core units during the school holidays to patch noticeable concept gaps."
+    if avg >= 21: return "Syllabus assimilation tracking below institutional expectations. Targeted diagnostic assessment worksheets must be administered instantly to fix this."
+    return "Core curriculum performance metrics fail to meet standard validation criteria. Immediate academic probationary track assignment is recommended."
 
 
 # ---------------- Parent portal ----------------
@@ -65,12 +152,16 @@ app.register_blueprint(parent_bp)
 
 # ---------------- Seed data + setup ----------------
 def seed_data():
+    # Subjects — combined list from all classes
+    all_subjects = set()
+    for subs in CURRICULUM_SUBJECTS.values():
+        all_subjects.update(subs)
     if Subject.query.count() == 0:
-        for s in ['Mathematics', 'English', 'Kiswahili', 'Science',
-                  'Social Studies', 'Religious Education', 'ICT']:
+        for s in sorted(all_subjects):
             db.session.add(Subject(name=s))
         db.session.commit()
 
+    # Classes
     if Class.query.count() == 0:
         for name, level in [
             ('Baby Class', 'Pre-Primary'), ('Middle Class', 'Pre-Primary'),
@@ -80,6 +171,12 @@ def seed_data():
             ('Standard Six', 'Primary'), ('Standard Seven', 'Primary'),
         ]:
             db.session.add(Class(name=name, level=level))
+        db.session.commit()
+
+    # Terms
+    if TermBoundary.query.count() == 0:
+        db.session.add(TermBoundary(term_name='Term I', academic_year='2026'))
+        db.session.add(TermBoundary(term_name='Term II', academic_year='2026'))
         db.session.commit()
 
 
@@ -378,9 +475,6 @@ def publish_exam(id):
     e = Examination.query.get_or_404(id)
     e.is_published = True
     db.session.commit()
-
-    # Notify parents
-    subjects = Subject.query.all()
     count = 0
     for pupil in Pupil.query.all():
         results = Result.query.filter_by(pupil_id=pupil.id, examination_id=id).all()
@@ -395,65 +489,209 @@ def publish_exam(id):
     return redirect(url_for('examinations'))
 
 
-# ---------------- Results entry ----------------
-@app.route('/results/entry', methods=['GET', 'POST'])
+# ================= GRADEBOOK & VIEWER =================
+
+@app.route('/gradebook')
 @teacher_required
-def result_entry():
+def gradebook():
     classes = Class.query.all()
-    exams = Examination.query.all()
-    subjects = Subject.query.all()
+    terms = TermBoundary.query.order_by(TermBoundary.id).all()
+    years = ['2026', '2027', '2028']
 
     class_id = request.args.get('class_id', type=int)
     stream_id = request.args.get('stream_id', type=int)
-    exam_id = request.args.get('exam_id', type=int)
-    subject_id = request.args.get('subject_id', type=int)
+    term_id = request.args.get('term_id', type=int)
+    exam_month = request.args.get('exam_month', '')
+    exam_type = request.args.get('exam_type', '')
+    academic_year = request.args.get('academic_year', '2026')
 
     pupils_list = []
+    subjects_list = []
     streams_list = []
+    selected_class = None
+
     if class_id:
+        selected_class = Class.query.get(class_id)
         streams_list = Stream.query.filter_by(class_id=class_id).all()
         q = Pupil.query.filter_by(class_id=class_id)
         if stream_id:
             q = q.filter_by(stream_id=stream_id)
         pupils_list = q.order_by(Pupil.first_name).all()
 
-    existing = {}
-    if exam_id and subject_id:
-        for r in Result.query.filter_by(examination_id=exam_id, subject_id=subject_id).all():
-            existing[r.pupil_id] = r.marks
-
-    if request.method == 'POST':
-        exam_id = int(request.form.get('exam_id'))
-        subject_id = int(request.form.get('subject_id'))
-        for p in pupils_list:
-            mark = request.form.get(f'mark_{p.id}')
-            if mark == '' or mark is None:
-                continue
-            mark = float(mark)
-            r = Result.query.filter_by(pupil_id=p.id, subject_id=subject_id,
-                                       examination_id=exam_id).first()
-            if r:
-                r.marks = mark
-                r.grade = Result.calculate_grade(mark)
-            else:
-                r = Result(pupil_id=p.id, subject_id=subject_id,
-                           examination_id=exam_id, marks=mark,
-                           grade=Result.calculate_grade(mark))
-                db.session.add(r)
+        subject_names = CURRICULUM_SUBJECTS.get(selected_class.name, [])
+        for sname in subject_names:
+            if not Subject.query.filter_by(name=sname).first():
+                db.session.add(Subject(name=sname))
         db.session.commit()
-        flash('Results saved!', 'success')
-        return redirect(url_for('result_entry', class_id=class_id,
-                                stream_id=stream_id, exam_id=exam_id,
-                                subject_id=subject_id))
+        subjects_list = Subject.query.filter(Subject.name.in_(subject_names)).all()
 
-    return render_template('results/entry.html', classes=classes,
-                           streams=streams_list, exams=exams, subjects=subjects,
-                           pupils=pupils_list, class_id=class_id,
-                           stream_id=stream_id, exam_id=exam_id,
-                           subject_id=subject_id, existing=existing)
+    return render_template('results/gradebook.html',
+                           classes=classes, terms=terms, years=years,
+                           streams=streams_list, pupils=pupils_list,
+                           subjects=subjects_list,
+                           class_id=class_id, stream_id=stream_id,
+                           term_id=term_id, exam_month=exam_month,
+                           exam_type=exam_type, academic_year=academic_year,
+                           selected_class=selected_class,
+                           subject_colors=SUBJECT_COLORS,
+                           academic_schedule=ACADEMIC_SCHEDULE)
 
 
-# ---------------- Report card ----------------
+@app.route('/gradebook/save', methods=['POST'])
+@teacher_required
+def gradebook_save():
+    pupil_id = request.form.get('pupil_id', type=int)
+    academic_year = request.form.get('academic_year', '2026')
+    term_name = request.form.get('term_name', '')
+    exam_month = request.form.get('exam_month', '')
+    exam_type = request.form.get('exam_type', '')
+
+    if not pupil_id:
+        flash('Select a pupil first.', 'danger')
+        return redirect(url_for('gradebook'))
+
+    saved = 0
+    for key, value in request.form.items():
+        if key.startswith('marks[') and value.strip():
+            subject_name = key[6:-1]
+            try:
+                marks_float = float(value)
+            except ValueError:
+                continue
+
+            subject = Subject.query.filter_by(name=subject_name).first()
+            if not subject:
+                subject = Subject(name=subject_name)
+                db.session.add(subject)
+                db.session.commit()
+
+            exam_label = f"{exam_type} - {academic_year}"
+            exam = Examination.query.filter_by(name=exam_label, term=term_name,
+                                               year=int(academic_year)).first()
+            if not exam:
+                exam = Examination(name=exam_label, term=term_name,
+                                   year=int(academic_year))
+                db.session.add(exam)
+                db.session.commit()
+
+            r = Result.query.filter_by(pupil_id=pupil_id, subject_id=subject.id,
+                                       examination_id=exam.id).first()
+            if r:
+                r.marks = marks_float
+                r.grade = Result.calculate_grade(marks_float)
+                r.month_tag = exam_month
+                r.assessment_type = exam_type
+            else:
+                r = Result(pupil_id=pupil_id, subject_id=subject.id,
+                           examination_id=exam.id, marks=marks_float,
+                           grade=Result.calculate_grade(marks_float),
+                           month_tag=exam_month, assessment_type=exam_type,
+                           academic_year=academic_year, term_name=term_name)
+                db.session.add(r)
+            saved += 1
+
+    db.session.commit()
+    flash(f'{saved} marks saved successfully!', 'success')
+    return redirect(request.referrer or url_for('gradebook'))
+
+
+@app.route('/results-viewer')
+@teacher_required
+def results_viewer():
+    classes = Class.query.all()
+    exams = Examination.query.order_by(Examination.year.desc()).all()
+
+    class_id = request.args.get('class_id', type=int)
+    exam_id = request.args.get('exam_id', type=int)
+
+    pupils_data = []
+    subject_columns = []
+
+    if class_id and exam_id:
+        pupils = Pupil.query.filter_by(class_id=class_id).order_by(Pupil.first_name).all()
+        subject_ids = db.session.query(Result.subject_id).filter_by(
+            examination_id=exam_id
+        ).distinct().all()
+        subject_columns = Subject.query.filter(
+            Subject.id.in_([s[0] for s in subject_ids])
+        ).order_by(Subject.name).all()
+
+        for p in pupils:
+            results = Result.query.filter_by(pupil_id=p.id, examination_id=exam_id).all()
+            marks_by_subject = {r.subject_id: r.marks for r in results}
+            total = sum(r.marks for r in results if r.marks)
+            avg = round(total / len(results), 1) if results else 0
+            grading = tanzanian_grade(avg)
+            pupils_data.append({
+                'pupil': p, 'marks': marks_by_subject, 'total': total,
+                'average': avg, 'grade': grading['grade'],
+                'remarks': grading['remarks']
+            })
+
+        pupils_data.sort(key=lambda x: x['average'], reverse=True)
+        for i, row in enumerate(pupils_data):
+            row['position'] = i + 1
+
+    return render_template('results/viewer.html',
+                           classes=classes, exams=exams,
+                           subject_columns=subject_columns,
+                           pupils_data=pupils_data,
+                           class_id=class_id, exam_id=exam_id,
+                           selected_class=Class.query.get(class_id) if class_id else None)
+
+
+@app.route('/report-card/<int:pupil_id>/<int:exam_id>')
+@teacher_required
+def report_card(pupil_id, exam_id):
+    pupil = Pupil.query.get_or_404(pupil_id)
+    exam = Examination.query.get_or_404(exam_id)
+    results = Result.query.filter_by(pupil_id=pupil_id, examination_id=exam_id).all()
+
+    subject_data = []
+    total_avg = 0
+    count = 0
+    for r in results:
+        grading = tanzanian_grade(r.marks)
+        subject_data.append({
+            'subject': r.subject.name,
+            'marks': r.marks,
+            'grade': grading['grade'],
+            'remarks': grading['remarks']
+        })
+        total_avg += r.marks
+        count += 1
+
+    overall_avg = round(total_avg / count, 1) if count else 0
+    overall_grading = tanzanian_grade(overall_avg)
+
+    class_pupils = Pupil.query.filter_by(class_id=pupil.class_id).all()
+    rankings = []
+    for cp in class_pupils:
+        cp_res = Result.query.filter_by(pupil_id=cp.id, examination_id=exam_id).all()
+        cp_total = sum(r.marks for r in cp_res if r.marks)
+        rankings.append((cp.id, cp_total))
+    rankings.sort(key=lambda x: x[1], reverse=True)
+    rank = next((i + 1 for i, (pid, _) in enumerate(rankings) if pid == pupil_id), None)
+
+    return render_template('reports/card_v2.html',
+                           pupil=pupil, exam=exam,
+                           subject_data=subject_data,
+                           overall_avg=overall_avg,
+                           overall_grade=overall_grading['grade'],
+                           overall_remarks=overall_grading['remarks'],
+                           head_comment=head_teacher_comment(overall_avg),
+                           dean_comment=dean_comment(overall_avg),
+                           rank=rank, class_size=len(class_pupils))
+
+
+# ---------------- Results entry (old, simple) ----------------
+@app.route('/results/entry', methods=['GET', 'POST'])
+@teacher_required
+def result_entry():
+    return redirect(url_for('gradebook'))
+
+
+# ---------------- Reports ----------------
 @app.route('/reports')
 @teacher_required
 def reports():
@@ -481,26 +719,7 @@ def report_pupils():
 @app.route('/reports/generate/<int:pupil_id>/<int:exam_id>')
 @teacher_required
 def generate_report(pupil_id, exam_id):
-    pupil = Pupil.query.get_or_404(pupil_id)
-    exam = Examination.query.get_or_404(exam_id)
-    results = Result.query.filter_by(pupil_id=pupil_id, examination_id=exam_id).all()
-    total = sum(r.marks for r in results if r.marks)
-    avg = round(total / len(results), 2) if results else 0
-    overall_grade = Result.calculate_grade(avg)
-
-    class_pupils = Pupil.query.filter_by(class_id=pupil.class_id).all()
-    rankings = []
-    for cp in class_pupils:
-        cp_res = Result.query.filter_by(pupil_id=cp.id, examination_id=exam_id).all()
-        cp_total = sum(r.marks for r in cp_res if r.marks)
-        rankings.append((cp.id, cp_total))
-    rankings.sort(key=lambda x: x[1], reverse=True)
-    rank = next((i + 1 for i, (pid, _) in enumerate(rankings) if pid == pupil_id), None)
-
-    return render_template('reports/card.html', pupil=pupil, exam=exam,
-                           results=results, total=total, average=avg,
-                           overall_grade=overall_grade, rank=rank,
-                           class_size=len(class_pupils))
+    return redirect(url_for('report_card', pupil_id=pupil_id, exam_id=exam_id))
 
 
 # ---------------- Excel Import ----------------
@@ -560,11 +779,10 @@ def forbidden(e):
 
 @app.errorhandler(404)
 def not_found(e):
-    return render_template('error.html', code=404,
-                           message='Page not found.'), 404
+    return render_template('error.html', code=404, message='Page not found.'), 404
 
 
-# ---------------- Init on first run ----------------
+# ---------------- Init ----------------
 with app.app_context():
     try:
         db.create_all()
@@ -574,4 +792,4 @@ with app.app_context():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

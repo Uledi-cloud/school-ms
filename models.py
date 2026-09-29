@@ -73,6 +73,7 @@ class Pupil(db.Model):
     __tablename__ = 'pupils'
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(50), nullable=False)
+    middle_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50), nullable=False)
     admission_no = db.Column(db.String(20), unique=True)
     gender = db.Column(db.String(10))
@@ -83,12 +84,14 @@ class Pupil(db.Model):
     parent_phone = db.Column(db.String(20))
     parent_email = db.Column(db.String(100))
     address = db.Column(db.String(200))
+    photo_path = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     results = db.relationship('Result', backref='pupil', cascade='all, delete-orphan')
 
     @property
     def full_name(self):
-        return f'{self.first_name} {self.last_name}'
+        parts = [self.first_name, self.middle_name, self.last_name]
+        return ' '.join(p for p in parts if p)
 
 
 class Examination(db.Model):
@@ -118,27 +121,41 @@ class Result(db.Model):
     examination_id = db.Column(db.Integer, db.ForeignKey('examinations.id'), nullable=False)
     marks = db.Column(db.Float)
     grade = db.Column(db.String(5))
+    month_tag = db.Column(db.String(20))
+    assessment_type = db.Column(db.String(50))
+    academic_year = db.Column(db.String(10))
+    term_name = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     __table_args__ = (db.UniqueConstraint('pupil_id', 'subject_id', 'examination_id'),)
 
     @staticmethod
     def calculate_grade(marks):
+        """Tanzanian Primary Education grading scale"""
         if marks is None:
             return None
-        if marks >= 80: return 'A'
-        if marks >= 70: return 'B'
-        if marks >= 60: return 'C'
-        if marks >= 50: return 'D'
-        if marks >= 40: return 'E'
-        return 'F'
+        if marks >= 81: return 'A'
+        if marks >= 61: return 'B'
+        if marks >= 41: return 'C'
+        if marks >= 21: return 'D'
+        return 'E'
 
     @staticmethod
     def grade_remark(grade):
         return {
             'A': 'Excellent', 'B': 'Very Good', 'C': 'Good',
-            'D': 'Satisfactory', 'E': 'Needs Improvement', 'F': 'Fail'
+            'D': 'Satisfactory', 'E': 'Fail'
         }.get(grade, '')
+
+
+class TermBoundary(db.Model):
+    __tablename__ = 'term_boundaries'
+    id = db.Column(db.Integer, primary_key=True)
+    term_name = db.Column(db.String(50), nullable=False)
+    opening_date = db.Column(db.Date)
+    closing_date = db.Column(db.Date)
+    next_opening_date = db.Column(db.Date)
+    academic_year = db.Column(db.String(10))
 
 
 class Notification(db.Model):

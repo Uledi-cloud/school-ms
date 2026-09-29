@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>School Management System</title>
+    <title>My ELITE Academia — School Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
-<body>
+<body class="bg-light">
 {% if current_user.is_authenticated %}
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<nav class="navbar navbar-expand-lg navbar-dark" style="background:#0f172a;">
     <div class="container-fluid">
-        <a class="navbar-brand" href="{{ url_for('index') }}">
-            <i class="bi bi-mortarboard-fill"></i> School MS
+        <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+            <i class="bi bi-mortarboard-fill"></i> My ELITE Academia
         </a>
         <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
             <span class="navbar-toggler-icon"></span>
@@ -25,8 +26,9 @@
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('streams') }}">Streams</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('staff_list') }}">Staff</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('examinations') }}">Exams</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('result_entry') }}">Enter Results</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('reports') }}">Reports</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('gradebook') }}"><i class="fa fa-book"></i> Gradebook</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('results_viewer') }}"><i class="fa fa-table"></i> Results</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('reports') }}"><i class="fa fa-file-pdf-o"></i> Reports</a></li>
                 {% if current_user.role == 'admin' %}
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('import_excel') }}">Import</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('notifications_send') }}">Notify</a></li>
@@ -37,13 +39,8 @@
                 {% endif %}
             </ul>
             <ul class="navbar-nav">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
-                        <i class="bi bi-person-circle"></i> {{ current_user.username }} ({{ current_user.role }})
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
-                    </ul>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout ({{ current_user.username }})</a>
                 </li>
             </ul>
         </div>
@@ -51,7 +48,7 @@
 </nav>
 {% endif %}
 
-<div class="container mt-4">
+<div class="container-fluid mt-4 px-4">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, msg in messages %}
         <div class="alert alert-{{ category }} alert-dismissible fade show">

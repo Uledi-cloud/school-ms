@@ -1,0 +1,158 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="no-print mb-3 d-flex gap-2">
+    <button onclick="window.print()" class="btn btn-success"><i class="fa fa-print"></i> Print Report Card</button>
+    <a href="{{ url_for('results_viewer') }}" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="report-card-container">
+    <div class="report-page">
+        <div class="report-header">
+            <h1>{{ config.SCHOOL_NAME }}</h1>
+            <p style="margin:2px 0; font-size:14px; font-weight:800; text-transform:uppercase; color:#1e3a8a;">
+                {{ exam.term }} {{ exam.year }} - {{ exam.name }}
+            </p>
+        </div>
+        <h3 class="section-title">I. Pupil Profile Section</h3>
+        <div class="profile-box">
+            <div class="profile-info">
+                <div><span>PUPIL FULL NAME:</span> <strong style="color:#1e3a8a;">{{ pupil.full_name|upper }}</strong></div>
+                <div><span>ADMISSION NUMBER:</span> <strong>{{ pupil.admission_no or 'N/A' }}</strong></div>
+                <div><span>GENDER / SEX:</span> <strong>{{ pupil.gender or 'N/A' }}</strong></div>
+                <div><span>CLASS LEVEL:</span> <strong>{{ pupil.class_.name }}</strong></div>
+                <div><span>ASSIGNED STREAM:</span> <strong>{% if pupil.stream %}{{ pupil.stream.name }}{% else %}Main{% endif %}</strong></div>
+                <div><span>ACADEMIC YEAR:</span> <strong>{{ exam.year }}</strong></div>
+            </div>
+            <div class="profile-photo">
+                <div class="text-center small text-muted fw-bold">
+                    <i class="fa fa-user" style="font-size:28px; color:#cbd5e1;"></i><br>Pupil Photo
+                </div>
+            </div>
+        </div>
+        <h3 class="section-title">II. Integrated Assessment Academic Ledger</h3>
+        <table class="slip-table">
+            <thead>
+                <tr>
+                    <th class="th-subject">SUBJECTS</th>
+                    <th class="th-exam">SCORE</th>
+                    <th class="th-perf-group">GRADE</th>
+                    <th class="th-perf-group">REMARKS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in subject_data %}
+                <tr>
+                    <td class="td-subject-name">{{ row.subject }}</td>
+                    <td class="text-center fw-bold">{{ row.marks }}</td>
+                    <td class="text-center fw-bold" style="color:#b45309;">{{ row.grade }}</td>
+                    <td class="td-remarks">{{ row.remarks }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="summary-box">
+            <div class="summary-title">Summary</div>
+            <div>Overall Average: <strong style="color:#047857;">{{ overall_avg }}%</strong></div>
+            <div>Overall Grade: <strong style="color:#b45309;">{{ overall_grade }}</strong></div>
+            <div>Class Position: <strong style="color:#6d28d9;">{{ rank }} / {{ class_size }}</strong></div>
+        </div>
+        <div class="footer-block">
+            <div class="footer-dates">
+                <div>TERMINAL CLOSING: {{ exam.year }}</div>
+                <div>NEXT TERM OPENS: TBA</div>
+            </div>
+            <div class="footer-note">Page 1 of 2 - &copy; {{ exam.year }} {{ config.SCHOOL_NAME }}</div>
+        </div>
+    </div>
+
+    <div class="report-page page-break">
+        <div class="report-header">
+            <h1>{{ config.SCHOOL_NAME }}</h1>
+            <p style="margin:2px 0; font-size:14px; font-weight:700; color:#1e3a8a;">
+                Behavioral Evaluation, Psychometrics & Administrative Remarks
+            </p>
+        </div>
+        <h3 class="section-title">III. Pupil Characteristics & Behavior Matrix</h3>
+        <p style="font-size:11px; margin-top:-4px; color:#475569;">
+            <strong>A</strong> = Excellent, <strong>B</strong> = Very Good, <strong>C</strong> = Good,
+            <strong>D</strong> = Satisfactory, <strong>E</strong> = Needs Attention
+        </p>
+        <div class="zebra">
+            <div class="zebra-head"><span>Behavioral Trait Descriptor</span><span style="width:60px; text-align:center;">Grade</span></div>
+            <div class="zebra-row"><span>Obedience, Respect for Authority, School Rules</span><span class="zebra-box"></span></div>
+            <div class="zebra-row"><span>Punctuality, Time Management, Attendance</span><span class="zebra-box"></span></div>
+            <div class="zebra-row"><span>Neatness, Personal Hygiene, Uniform Care</span><span class="zebra-box"></span></div>
+            <div class="zebra-row"><span>Honesty, Integrity, Trustworthiness</span><span class="zebra-box"></span></div>
+            <div class="zebra-row"><span>Cooperation, Teamwork, Peer Collaboration</span><span class="zebra-box"></span></div>
+            <div class="zebra-row"><span>Care, Creativity, Stewardship of Facilities</span><span class="zebra-box"></span></div>
+            <div class="zebra-row"><span>Participation in Sports, Activities, Arts</span><span class="zebra-box"></span></div>
+        </div>
+        <h3 class="section-title">IV. Executive Leadership Remarks</h3>
+        <div class="eval-section">
+            <p class="eval-title">Class Teacher's Remarks:</p>
+            <p class="eval-comment">"A committed learner throughout this tier. Attendance has been regular and active participation in class discussions shows positive growth."</p>
+            <p class="eval-sign">Signature: ......................................... Date: .....................</p>
+        </div>
+        <div class="eval-section">
+            <p class="eval-title">Academic Dean's Remarks:</p>
+            <p class="eval-comment">"{{ dean_comment }}"</p>
+            <p class="eval-sign">Signature: ......................................... Date: .....................</p>
+        </div>
+        <div class="eval-section">
+            <p class="eval-title">Head Teacher's Executive Verdict:</p>
+            <p class="eval-comment">"{{ head_comment }}"</p>
+            <p class="eval-sign">Signature: ......................................... Date: .....................</p>
+        </div>
+        <div class="stamp-block"><div class="stamp">Official School Stamp</div></div>
+        <div class="footer-block">
+            <div class="footer-note">Page 2 of 2 - &copy; {{ exam.year }} {{ config.SCHOOL_NAME }}</div>
+        </div>
+    </div>
+</div>
+
+<style>
+.report-card-container { max-width: 850px; margin: 0 auto; }
+.report-page { background: #fff; border: 4px double #1e3a8a; padding: 30px 40px; margin-bottom: 20px; box-shadow: 0 2px 20px rgba(0,0,0,0.06); min-height: 1100px; display: flex; flex-direction: column; }
+.report-header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 14px; }
+.report-header h1 { margin: 4px 0; font-size: 26px; color: #1e3a8a; font-weight: 800; }
+.section-title { border-left: 4px solid #1e3a8a; padding-left: 10px; margin: 14px 0 8px 0; font-size: 14px; text-transform: uppercase; color: #0f172a; font-weight: 800; }
+.profile-box { display: flex; justify-content: space-between; align-items: flex-start; background: #f8fafc; padding: 14px 18px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 14px; }
+.profile-info { font-size: 13px; line-height: 1.9; font-weight: 600; }
+.profile-info span { color: #475569; }
+.profile-photo { width: 85px; height: 100px; border: 2px solid #0f172a; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.slip-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+.slip-table th, .slip-table td { border: 1px solid #cbd5e1; padding: 7px 10px; font-size: 13px; }
+.th-subject { background: #1e3a8a; color: #fff; text-align: left; text-transform: uppercase; font-size: 12px; }
+.th-exam, .th-perf-group { background: #0d9488; color: #fff; text-align: center; text-transform: uppercase; font-size: 12px; }
+.td-subject-name { font-weight: 700; text-align: left; background: #f8fafc; }
+.td-remarks { font-size: 12px; font-weight: 600; color: #6d28d9; text-align: left; }
+.summary-box { display: flex; border: 2px solid #334155; border-radius: 6px; overflow: hidden; font-weight: 800; font-size: 13px; background: #fff; margin-bottom: 14px; }
+.summary-box > div { flex: 1; padding: 10px; text-align: center; border-right: 1px solid #cbd5e1; }
+.summary-box > div:last-child { border-right: none; }
+.summary-title { background: #475569; color: #fff; text-transform: uppercase; max-width: 110px; font-size: 12px; }
+.zebra { border: 2px solid #334155; border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
+.zebra-head { background: #0f172a; color: #fff; display: flex; justify-content: space-between; padding: 8px 12px; font-weight: 800; font-size: 12.5px; text-transform: uppercase; }
+.zebra-row { display: flex; justify-content: space-between; padding: 6px 12px; font-size: 12.5px; font-weight: 700; border-bottom: 1px solid #cbd5e1; }
+.zebra-row:nth-child(even) { background: #f1f5f9; }
+.zebra-row:last-child { border-bottom: none; }
+.zebra-box { width: 40px; text-align: center; }
+.eval-section { margin-bottom: 12px; }
+.eval-title { font-size: 12.5px; font-weight: 800; text-transform: uppercase; margin: 0 0 4px 0; color: #1e3a8a; }
+.eval-comment { font-size: 12.5px; font-style: italic; background: #f8fafc; padding: 8px 12px; border-left: 3px solid #334155; margin: 0 0 6px 0; border-radius: 0 4px 4px 0; }
+.eval-sign { font-size: 12px; font-weight: 700; margin: 0; }
+.stamp-block { text-align: center; margin: 14px 0; }
+.stamp { display: inline-block; padding: 25px 40px; border: 2px dashed #94a3b8; border-radius: 6px; color: #64748b; font-weight: 800; text-transform: uppercase; font-size: 12px; background: #f8fafc; }
+.footer-block { margin-top: auto; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+.footer-dates { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; color: #1e3a8a; margin-bottom: 4px; }
+.footer-note { text-align: center; font-size: 10px; color: #64748b; }
+@media print {
+    @page { size: A4; margin: 8mm; }
+    body * { visibility: hidden; }
+    .report-card-container, .report-card-container * { visibility: visible; }
+    .report-card-container { position: absolute; left: 0; top: 0; width: 100%; }
+    .no-print { display: none !important; }
+    .page-break { page-break-before: always; }
+    .report-page { border: none; box-shadow: none; min-height: auto; padding: 6mm 10mm; }
+}
+</style>
+{% endblock %}
