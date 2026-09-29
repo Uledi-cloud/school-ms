@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between">
+    <h2>Examinations</h2>
+    <a href="{{ url_for('add_examination') }}" class="btn btn-primary">+ Add Exam</a>
+</div>
+<table class="table table-striped mt-3">
+    <thead><tr><th>ID</th><th>Name</th><th>Term</th><th>Year</th><th>Published</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for e in exams %}
+    <tr><td>{{ e.id }}</td><td>{{ e.name }}</td><td>{{ e.term }}</td><td>{{ e.year }}</td>
+        <td>{{ 'Yes' if e.is_published else 'No' }}</td>
+        <td>{% if not e.is_published %}
+            <a href="{{ url_for('publish_exam', id=e.id) }}" class="btn btn-sm btn-success"
+               onclick="return confirm('Publish and notify all parents?')">Publish & Notify</a>
+            {% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

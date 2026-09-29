@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+div class=card p-4 style=max-width800px;marginauto;
+    h3 class=text-center{{ config.SCHOOL_NAME }}h3
+    h5 class=text-center{{ exam.name }} - {{ exam.term }} {{ exam.year }}h5
+    pbPupilb {{ pupil.full_name }} ({{ pupil.class_.name }})p
+    table class=table table-bordered
+        thead class=table-secondarytrthSubjectththMarksththGradeththRemarkthtrthead
+        tbody
+        {% for r in results %}
+        trtd{{ r.subject.name }}tdtd{{ r.marks }}td
+            td{{ r.grade }}tdtd{{ r.grade_remark(r.grade) }}tdtr
+        {% endfor %}
+        tr class=table-primary
+            tdbTotalbtdtdb{{ total }}btd
+            td colspan=2bAverage {{ average }} ({{ overall_grade }})btd
+        tr
+        tbody
+    table
+    div class=text-centerbutton onclick=window.print() class=btn btn-primaryPrintbuttondiv
+div
+{% endblock %}

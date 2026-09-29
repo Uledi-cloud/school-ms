@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between">
+    <h2>Pupils</h2>
+    <a href="{{ url_for('add_pupil') }}" class="btn btn-primary">+ Register Pupil</a>
+</div>
+<form class="row g-2 mb-3 mt-2" method="GET">
+    <div class="col-md-3">
+        <select name="class_id" class="form-select" onchange="this.form.submit()">
+            <option value="">All Classes</option>
+            {% for c in classes %}
+            <option value="{{ c.id }}" {% if class_id==c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-6"><input name="q" value="{{ search }}" class="form-control" placeholder="Search name or admission no..."></div>
+    <div class="col-md-2"><button class="btn btn-secondary w-100">Search</button></div>
+</form>
+<table class="table table-striped">
+    <thead><tr><th>#</th><th>Adm</th><th>Name</th><th>Class</th><th>Stream</th><th>Gender</th><th>Parent</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for p in pupils %}
+    <tr>
+        <td>{{ loop.index }}</td><td>{{ p.admission_no or '-' }}</td>
+        <td>{{ p.full_name }}</td><td>{{ p.class_.name }}</td>
+        <td>{{ p.stream.name if p.stream else '-' }}</td>
+        <td>{{ p.gender }}</td><td>{{ p.parent_name or '-' }}</td>
+        <td>
+            <a href="{{ url_for('edit_pupil', id=p.id) }}" class="btn btn-sm btn-warning">Edit</a>
+            <a href="{{ url_for('delete_pupil', id=p.id) }}" class="btn btn-sm btn-danger"
+               onclick="return confirm('Delete?')">Del</a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

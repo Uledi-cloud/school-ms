@@ -1,0 +1,17 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between">
+    <h2>Notification Log</h2>
+    <a href="{{ url_for('notifications_send') }}" class="btn btn-primary">+ Send</a>
+</div>
+<table class="table table-sm mt-3">
+    <thead><tr><th>When</th><th>Channel</th><th>Recipient</th><th>Status</th><th>Error</th></tr></thead>
+    <tbody>
+    {% for n in logs %}
+    <tr><td>{{ n.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+        <td>{{ n.channel }}</td><td>{{ n.recipient }}</td>
+        <td>{{ n.status }}</td><td><small>{{ n.error or "" }}</small></td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

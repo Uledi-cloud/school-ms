@@ -1,0 +1,38 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="card p-4" style="max-width:800px;margin:auto;">
+    <div class="text-center">
+        <h3>{{ config.SCHOOL_NAME }}</h3>
+        <p>{{ config.SCHOOL_ADDRESS }} | {{ config.SCHOOL_PHONE }}</p>
+        <hr><h4>STUDENT REPORT CARD</h4>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <p><b>Name:</b> {{ pupil.full_name }}</p>
+            <p><b>Admission:</b> {{ pupil.admission_no or "-" }}</p>
+            <p><b>Class:</b> {{ pupil.class_.name }}{% if pupil.stream %} ({{ pupil.stream.name }}){% endif %}</p>
+        </div>
+        <div class="col-md-6">
+            <p><b>Exam:</b> {{ exam.name }}</p>
+            <p><b>Term:</b> {{ exam.term }} | <b>Year:</b> {{ exam.year }}</p>
+            <p><b>Rank:</b> {{ rank }} of {{ class_size }}</p>
+        </div>
+    </div>
+    <table class="table table-bordered">
+        <thead class="table-secondary"><tr><th>Subject</th><th>Marks</th><th>Grade</th><th>Remark</th></tr></thead>
+        <tbody>
+        {% for r in results %}
+        <tr><td>{{ r.subject.name }}</td><td>{{ r.marks }}</td>
+            <td>{{ r.grade }}</td><td>{{ r.grade_remark(r.grade) }}</td></tr>
+        {% endfor %}
+        <tr class="table-primary"><td><b>Total</b></td><td><b>{{ total }}</b></td>
+            <td colspan="2"><b>Average: {{ average }} ({{ overall_grade }})</b></td></tr>
+        </tbody>
+    </table>
+    <div class="row mt-4">
+        <div class="col-md-6"><p><b>Class Teacher:</b></p><p class="border-bottom pb-4">______</p></div>
+        <div class="col-md-6"><p><b>Head Teacher:</b></p><p class="border-bottom pb-4">______</p></div>
+    </div>
+    <div class="text-center mt-3"><button onclick="window.print()" class="btn btn-primary">Print</button></div>
+</div>
+{% endblock %}

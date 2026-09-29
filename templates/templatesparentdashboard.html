@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Parent Portal</h2>
+{% if pupil %}
+<div class="card mb-3"><div class="card-body">
+    <h5>{{ pupil.full_name }}</h5>
+    <p>Class: {{ pupil.class_.name }} | Admission: {{ pupil.admission_no or '-' }}</p>
+</div></div>
+<h4>Published Results</h4>
+<ul class="list-group">
+    {% for e in exams %}
+    <li class="list-group-item d-flex justify-content-between">
+        {{ e.name }} {{ e.term }} {{ e.year }}
+        <a class="btn btn-sm btn-primary"
+           href="{{ url_for('parent.child_view', pupil_id=pupil.id, exam_id=e.id) }}">View</a>
+    </li>
+    {% else %}
+    <li class="list-group-item">No published results yet.</li>
+    {% endfor %}
+</ul>
+{% else %}
+<div class="alert alert-warning">No child is linked to your account. Contact the school.</div>
+{% endif %}
+{% endblock %}

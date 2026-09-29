@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Generate Report Cards</h2>
+<form method="GET" action="{{ url_for('report_pupils') }}" class="row g-3">
+    <div class="col-md-5">
+        <label>Class</label>
+        <select name="class_id" class="form-select" required>
+            <option value="">-- Select --</option>
+            {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="col-md-5">
+        <label>Examination</label>
+        <select name="exam_id" class="form-select" required>
+            <option value="">-- Select --</option>
+            {% for e in exams %}<option value="{{ e.id }}">{{ e.name }} {{ e.term }} {{ e.year }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100">Continue</button>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,20 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="card p-4" style="max-width:800px;margin:auto;">
+    <h3 class="text-center">{{ config.SCHOOL_NAME }}</h3>
+    <h5 class="text-center">{{ exam.name }} - {{ exam.term }} {{ exam.year }}</h5>
+    <p><b>Pupil:</b> {{ pupil.full_name }} ({{ pupil.class_.name }})</p>
+    <table class="table table-bordered">
+        <thead class="table-secondary"><tr><th>Subject</th><th>Marks</th><th>Grade</th><th>Remark</th></tr></thead>
+        <tbody>
+        {% for r in results %}
+        <tr><td>{{ r.subject.name }}</td><td>{{ r.marks }}</td>
+            <td>{{ r.grade }}</td><td>{{ r.grade_remark(r.grade) }}</td></tr>
+        {% endfor %}
+        <tr class="table-primary"><td><b>Total</b></td><td><b>{{ total }}</b></td>
+            <td colspan="2"><b>Average: {{ average }} ({{ overall_grade }})</b></td></tr>
+        </tbody>
+    </table>
+    <div class="text-center"><button onclick="window.print()" class="btn btn-primary">Print</button></div>
+</div>
+{% endblock %}
