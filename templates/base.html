@@ -3,61 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>School Management System</title>
+    <title>{% block page_title %}Dashboard{% endblock %} — {{ current_user.school.name if current_user.is_authenticated and current_user.school else 'School Management System' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        :root { --sidebar-w: 260px; }
+        * { box-sizing: border-box; }
+        body { background: #f1f5f9; font-family: 'Segoe UI', sans-serif; margin: 0; }
+
+        .sidebar {
+            width: var(--sidebar-w);
+            background: #0f172a;
+            position: fixed; top: 0; bottom: 0; left: 0;
+            display: flex; flex-direction: column;
+            z-index: 100; transition: transform 0.3s;
+            overflow-y: auto;
+        }
+        .sidebar.collapsed { transform: translateX(-100%); }
+        .sidebar-brand {
+            background: #1e3a8a; color: #fff; padding: 15px;
+            text-align: center; font-weight: 800; font-size: 13px;
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            min-height: 60px;
+        }
+        .sidebar-brand img { max-height: 32px; border-radius: 4px; }
+        .sidebar-menu { padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; }
+        .menu-section {
+            font-size: 10px; color: #475569; padding: 10px 15px 4px;
+            font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .menu-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 15px; color: #94a3b8; text-decoration: none;
+            border-radius: 8px; font-size: 13px; font-weight: 700;
+            border-left: 4px solid transparent; transition: all 0.2s;
+        }
+        .menu-item:hover { color: #fff; background: rgba(30,58,138,0.15); border-left-color: #1e3a8a; }
+        .menu-item.active { color: #fff; background: rgba(30,58,138,0.25); border-left-color: #1e3a8a; }
+        .menu-item.nav-dev:hover, .menu-item.nav-dev.active { background: rgba(124,58,237,0.15); border-left-color: #7c3aed; }
+        .menu-item.nav-logout:hover { background: rgba(220,38,38,0.15); border-left-color: #dc2626; }
+        .sidebar-footer {
+            padding: 15px; text-align: center; font-size: 10px;
+            color: #475569; border-top: 1px solid rgba(255,255,255,0.05);
+            font-weight: 700; margin-top: auto;
+        }
+
+        .main-workspace {
+            margin-left: var(--sidebar-w);
+            padding: 25px 35px; min-height: 100vh;
+            transition: margin-left 0.3s;
+        }
+        .main-workspace.expanded { margin-left: 0; }
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 15px; border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 25px; gap: 15px;
+        }
+        .top-bar h2 { font-size: 22px; font-weight: 800; color: #1e3a8a; margin: 0; }
+        .hamburger-btn {
+            background: #0f172a; border: none; width: 42px; height: 40px;
+            border-radius: 6px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 5px;
+            cursor: pointer; flex-shrink: 0;
+        }
+        .hamburger-line { width: 22px; height: 3px; background: #fff; border-radius: 2px; }
+
+        .stat-card {
+            background: #fff; border-radius: 12px; padding: 18px;
+            display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0; transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-icon {
+            width: 50px; height: 50px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: #fff; flex-shrink: 0;
+        }
+        .stat-value { font-size: 20px; font-weight: 900; color: #0f172a; }
+        .stat-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
+        .card-modern {
+            background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 12px; padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .quick-link-btn {
+            display: flex; align-items: center; gap: 12px; padding: 15px;
+            background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px;
+            color: #1e3a8a; font-weight: 700; text-decoration: none;
+            transition: all 0.2s; font-size: 13px;
+        }
+        .quick-link-btn:hover { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); }
+            .main-workspace { margin-left: 0; padding: 20px 15px; }
+        }
+    </style>
 </head>
 <body>
+
 {% if current_user.is_authenticated %}
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="{{ url_for('index') }}">
-            <i class="bi bi-mortarboard-fill"></i> School MS
+<nav class="sidebar" id="sidebarNode">
+    <div class="sidebar-brand">
+        {% if current_user.role == 'developer' %}
+            <i class="fa fa-shield"></i> Developer Panel
+        {% else %}
+            {% if current_user.school and current_user.school.logo_path %}
+                <img src="{{ current_user.school.logo_path }}" alt="Logo">
+            {% else %}
+                <i class="fa fa-graduation-cap"></i>
+            {% endif %}
+            <span>{{ current_user.school.name if current_user.school else 'School MS' }}</span>
+        {% endif %}
+    </div>
+
+    <div class="sidebar-menu">
+
+        {# ================= DEVELOPER SECTION ================= #}
+        {% if current_user.role == 'developer' %}
+        <div class="menu-section">DEVELOPER</div>
+        <a href="{{ url_for('auth.developer_schools') }}"
+           class="menu-item nav-dev {% if 'developer_school' in (request.endpoint or '') %}active{% endif %}">
+            <i class="fa fa-university"></i> All Schools
         </a>
-        <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="nav">
-            <ul class="navbar-nav me-auto">
-                {% if current_user.role != 'parent' %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('pupils') }}">Pupils</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('classes') }}">Classes</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('streams') }}">Streams</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('staff_list') }}">Staff</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('examinations') }}">Exams</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('result_entry') }}">Enter Results</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('reports') }}">Reports</a></li>
-                {% if current_user.role == 'admin' %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('import_excel') }}">Import</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('notifications_send') }}">Notify</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.users_list') }}">Users</a></li>
-                {% endif %}
-                {% else %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('parent.dashboard') }}">My Child</a></li>
-                {% endif %}
-            </ul>
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout ({{ current_user.username }})</a>
-                </li>
-            </ul>
-        </div>
+        {% endif %}
+
+        {# ================= SCHOOL SECTION ================= #}
+        {% if current_user.role in ('admin', 'teacher') %}
+        <div class="menu-section">SCHOOL</div>
+
+        <a href="{{ url_for('index') }}"
+           class="menu-item {% if request.endpoint == 'index' %}active{% endif %}">
+            <i class="fa fa-th-large"></i> Dashboard
+        </a>
+
+        {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('auth.admin_users') }}"
+           class="menu-item {% if request.endpoint == 'auth.admin_users' %}active{% endif %}">
+            <i class="fa fa-users"></i> Manage Users
+        </a>
+        {% endif %}
+
+        <a href="{{ url_for('pupils') }}"
+           class="menu-item {% if request.endpoint and 'pupil' in request.endpoint %}active{% endif %}">
+            <i class="fa fa-child"></i> Pupils
+        </a>
+
+        <a href="{{ url_for('classes') }}"
+           class="menu-item {% if request.endpoint == 'classes' %}active{% endif %}">
+            <i class="fa fa-th-list"></i> Classes
+        </a>
+
+        <a href="{{ url_for('streams') }}"
+           class="menu-item {% if request.endpoint == 'streams' %}active{% endif %}">
+            <i class="fa fa-sitemap"></i> Streams
+        </a>
+
+        <a href="{{ url_for('staff_list') }}"
+           class="menu-item {% if request.endpoint == 'staff_list' %}active{% endif %}">
+            <i class="fa fa-vcard-o"></i> Staff
+        </a>
+
+        <a href="{{ url_for('attendance') }}"
+           class="menu-item {% if request.endpoint == 'attendance' %}active{% endif %}">
+            <i class="fa fa-check-square-o"></i> Attendance
+        </a>
+
+        <div class="menu-section">ACADEMICS</div>
+
+        <a href="{{ url_for('gradebook') }}"
+           class="menu-item {% if request.endpoint == 'gradebook' %}active{% endif %}">
+            <i class="fa fa-book"></i> Gradebook
+        </a>
+
+        <a href="{{ url_for('results_edit') }}"
+           class="menu-item {% if request.endpoint == 'results_edit' %}active{% endif %}">
+            <i class="fa fa-pencil-square"></i> Edit Results
+        </a>
+
+        <a href="{{ url_for('results_delete') }}"
+           class="menu-item {% if request.endpoint == 'results_delete' %}active{% endif %}">
+            <i class="fa fa-trash"></i> Delete Results
+        </a>
+
+        <a href="{{ url_for('results_viewer') }}"
+           class="menu-item {% if request.endpoint == 'results_viewer' %}active{% endif %}">
+            <i class="fa fa-table"></i> Results Viewer
+        </a>
+
+        <a href="{{ url_for('marklist_select') }}"
+           class="menu-item {% if 'marklist' in (request.endpoint or '') %}active{% endif %}">
+            <i class="fa fa-list-alt"></i> Marklist
+        </a>
+
+        <a href="{{ url_for('reports') }}"
+           class="menu-item {% if request.endpoint == 'reports' %}active{% endif %}">
+            <i class="fa fa-file-pdf-o"></i> Report Cards
+        </a>
+
+        <a href="{{ url_for('examinations') }}"
+           class="menu-item {% if request.endpoint == 'examinations' %}active{% endif %}">
+            <i class="fa fa-calendar"></i> Examinations
+        </a>
+
+        {% if current_user.role == 'admin' %}
+        <div class="menu-section">ADMIN</div>
+
+        <a href="{{ url_for('import_excel') }}"
+           class="menu-item {% if request.endpoint == 'import_excel' %}active{% endif %}">
+            <i class="fa fa-upload"></i> Import Excel
+        </a>
+
+        <a href="{{ url_for('notifications_send') }}"
+           class="menu-item {% if request.endpoint == 'notifications_send' %}active{% endif %}">
+            <i class="fa fa-paper-plane"></i> Notify Parents
+        </a>
+        {% endif %}
+
+        {% endif %}
+
+        {# ================= PARENT ================= #}
+        {% if current_user.role == 'parent' %}
+        <div class="menu-section">PARENT</div>
+        <a href="{{ url_for('parent.dashboard') }}" class="menu-item">
+            <i class="fa fa-child"></i> My Child
+        </a>
+        {% endif %}
+
+        {# ================= PUPIL ================= #}
+        {% if current_user.role == 'pupil' %}
+        <div class="menu-section">PUPIL</div>
+        <a href="{{ url_for('auth.pupil_portal') }}" class="menu-item">
+            <i class="fa fa-graduation-cap"></i> My Portal
+        </a>
+        {% endif %}
+
+        {# ================= LOGOUT ================= #}
+        <div class="menu-section">&nbsp;</div>
+        <a href="{{ url_for('auth.logout') }}" class="menu-item nav-logout">
+            <i class="fa fa-sign-out"></i> End Session
+        </a>
+    </div>
+
+    <div class="sidebar-footer">
+        &copy; {{ current_year if current_year else 2026 }}<br>
+        {% if current_user.role == 'developer' %}
+            Developer Panel
+        {% else %}
+            {{ current_user.school.name if current_user.school else 'School MS' }}
+        {% endif %}
     </div>
 </nav>
 {% endif %}
 
-<div class="container mt-4">
+<main class="main-workspace" id="workspaceNode">
+
+    {# ================= PAYMENT BANNER ================= #}
+    {% if current_user.is_authenticated and current_user.school and current_user.role in ('admin', 'teacher') %}
+      {% if current_user.school.payment_status == 'pending' %}
+        <div style="background:#fef3c7; border:2px solid #d97706; color:#92400e; padding:15px 20px; border-radius:10px; margin-bottom:20px; font-weight:700;">
+          <i class="fa fa-exclamation-triangle" style="font-size:20px;"></i>
+          <strong>Payment Reminder:</strong> Your school's monthly subscription fee of
+          <strong>TZS {{ "{:,}".format(current_user.school.monthly_fee or 70000) }}</strong>
+          is due{% if current_user.school.next_due_at %} by <strong>{{ current_user.school.next_due_at.strftime('%Y-%m-%d %H:%M') }}</strong>{% endif %}.
+          <br>Payment Token: <code style="background:#fff; padding:2px 8px; border-radius:4px; font-size:14px;">{{ current_user.school.payment_token }}</code>
+          &nbsp; Please contact the developer to complete payment.
+        </div>
+      {% elif current_user.school.payment_status == 'overdue' %}
+        <div style="background:#fee2e2; border:2px solid #dc2626; color:#991b1b; padding:15px 20px; border-radius:10px; margin-bottom:20px; font-weight:700;">
+          <i class="fa fa-ban" style="font-size:20px;"></i>
+          <strong>OVERDUE PAYMENT:</strong> Your monthly subscription has expired.
+          Token: <code>{{ current_user.school.payment_token }}</code>. Please pay immediately.
+        </div>
+      {% endif %}
+    {% endif %}
+
+    {% if current_user.is_authenticated %}
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <button type="button" class="hamburger-btn" onclick="toggleSidebar()">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            <h2>{% block page_title_full %}Dashboard{% endblock %}</h2>
+        </div>
+        <div style="font-size:12.5px; color:#64748b; font-weight:700;">
+            <i class="fa fa-user-circle"></i>
+            {{ current_user.full_name or current_user.username }}
+            <span class="badge bg-primary">{{ current_user.role }}</span>
+        </div>
+    </div>
+    {% endif %}
+
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, msg in messages %}
         <div class="alert alert-{{ category }} alert-dismissible fade show">
             {{ msg }}
-            <button class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
       {% endfor %}
     {% endwith %}
-    {% block content %}{% endblock %}
-</div>
 
+    {% block content %}{% endblock %}
+</main>
+
+<script>
+function toggleSidebar() {
+    var s = document.getElementById('sidebarNode');
+    var w = document.getElementById('workspaceNode');
+    if (s) s.classList.toggle('collapsed');
+    if (w) w.classList.toggle('expanded');
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

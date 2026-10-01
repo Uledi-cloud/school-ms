@@ -1,9 +1,11 @@
 ﻿{% extends "base.html" %}
+{% block page_title %}Gradebook{% endblock %}
 {% block content %}
-<h2 class="fw-bold" style="color:#1e3a8a;"><i class="fa fa-book"></i> Examination Gradebook Hub</h2>
-<p class="text-muted">Seamlessly compile and store student continuous assessments & terminal exams.</p>
 
-<div class="card mb-4 p-4 shadow-sm">
+<h2 class="fw-bold" style="color:#1e3a8a;"><i class="fa fa-book"></i> Examination Gradebook</h2>
+<p class="text-muted">Enter marks for <strong>one pupil</strong> at a time, or <strong>all pupils at once</strong> using batch mode.</p>
+
+<div class="card-modern mb-4">
     <form method="GET" id="filterForm">
         <div class="row g-3">
             <div class="col-md-2">
@@ -15,9 +17,9 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="small fw-bold text-success">TERM CYCLE</label>
+                <label class="small fw-bold text-success">TERM</label>
                 <select name="term_id" class="form-select" onchange="this.form.submit()">
-                    <option value="">Select Term...</option>
+                    <option value="">-- Term --</option>
                     {% for t in terms %}
                     <option value="{{ t.id }}" {% if term_id==t.id %}selected{% endif %}>{{ t.term_name }}</option>
                     {% endfor %}
@@ -26,7 +28,7 @@
             <div class="col-md-2">
                 <label class="small fw-bold text-warning">EXAM MONTH</label>
                 <select name="exam_month" class="form-select" onchange="this.form.submit()">
-                    <option value="">Select Month...</option>
+                    <option value="">-- Month --</option>
                     {% for term_key, months in academic_schedule.items() %}
                         {% for month in months.keys() %}
                         <option value="{{ month }}" {% if exam_month==month %}selected{% endif %}>{{ month }}</option>
@@ -34,10 +36,10 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="small fw-bold" style="color:#be185d;">EXAM TYPE</label>
                 <select name="exam_type" class="form-select" onchange="this.form.submit()">
-                    <option value="">Select Exam Type...</option>
+                    <option value="">-- Exam Type --</option>
                     {% for term_key, months in academic_schedule.items() %}
                         {% for month, exam_name in months.items() %}
                         <option value="{{ exam_name }}" {% if exam_type==exam_name %}selected{% endif %}>{{ exam_name }}</option>
@@ -46,15 +48,15 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="small fw-bold" style="color:#6d28d9;">CLASS LEVEL</label>
+                <label class="small fw-bold" style="color:#6d28d9;">CLASS</label>
                 <select name="class_id" class="form-select" onchange="this.form.submit()">
-                    <option value="">Select Class...</option>
+                    <option value="">-- Class --</option>
                     {% for c in classes %}
                     <option value="{{ c.id }}" {% if class_id==c.id %}selected{% endif %}>{{ c.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-1">
+            <div class="col-md-2">
                 <label class="small fw-bold" style="color:#0e7490;">STREAM</label>
                 <select name="stream_id" class="form-select" onchange="this.form.submit()">
                     <option value="">All</option>
@@ -67,48 +69,134 @@
     </form>
 </div>
 
-{% if selected_class and pupils and exam_type and term_id %}
-<form method="POST" action="{{ url_for('gradebook_save') }}">
-    <input type="hidden" name="academic_year" value="{{ academic_year }}">
-    <input type="hidden" name="term_name" value="{% for t in terms %}{% if t.id==term_id %}{{ t.term_name }}{% endif %}{% endfor %}">
-    <input type="hidden" name="exam_month" value="{{ exam_month }}">
-    <input type="hidden" name="exam_type" value="{{ exam_type }}">
+{% if selected_class and pupils and exam_type and term_id and exam_month %}
 
-    <div class="card p-4 shadow-sm mb-4" style="background:#f8fafc;">
-        <label class="fw-bold mb-2">Select Target Pupil ({{ selected_class.name }})</label>
-        <select name="pupil_id" class="form-select form-select-lg fw-bold" required style="color:#1e3a8a;">
-            <option value="">-- Choose Pupil Profile --</option>
-            {% for p in pupils %}
-            <option value="{{ p.id }}">{{ p.admission_no or 'N/A' }} - {{ p.full_name }}</option>
-            {% endfor %}
-        </select>
-    </div>
+<div class="mb-3 d-flex gap-2">
+    <button type="button" class="btn btn-outline-primary active" id="btnSingle" onclick="switchMode('single')">
+        <i class="fa fa-user"></i> One Pupil at a Time
+    </button>
+    <button type="button" class="btn btn-outline-primary" id="btnBatch" onclick="switchMode('batch')">
+        <i class="fa fa-users"></i> All Pupils at Once (Batch)
+    </button>
+</div>
 
-    <h5 class="fw-bold mb-3" style="color:#1e3a8a;"><i class="fa fa-pencil-square-o"></i> Subject Performance Entry Matrix</h5>
+<!-- SINGLE MODE -->
+<div id="singleMode">
+    <form method="POST" action="{{ url_for('gradebook_save') }}">
+        <input type="hidden" name="academic_year" value="{{ academic_year }}">
+        <input type="hidden" name="term_name" value="{{ selected_term_name }}">
+        <input type="hidden" name="exam_month" value="{{ exam_month }}">
+        <input type="hidden" name="exam_type" value="{{ exam_type }}">
 
-    <div class="row g-3">
-        {% for s in subjects %}
-        {% set cfg = subject_colors.get(s.name, {'border':'#cbd5e1','bg':'#f1f5f9','text':'#475569'}) %}
-        <div class="col-md-4 col-lg-3">
-            <div class="p-3 rounded" style="background:{{ cfg.bg }}; border-left: 5px solid {{ cfg.border }};">
-                <label class="fw-bold mb-2" style="color:{{ cfg.text }}; font-size:13px;">
-                    <i class="fa fa-book"></i> {{ s.name }}
-                </label>
-                <input type="number" name="marks[{{ s.name }}]" class="form-control" min="0" max="100" step="0.5" placeholder="Score 0-100">
-            </div>
+        <div class="card-modern mb-3" style="background:#f8fafc;">
+            <label class="fw-bold">Select Pupil ({{ selected_class.name }})</label>
+            <select name="pupil_id" class="form-select form-select-lg fw-bold" required style="color:#1e3a8a;">
+                <option value="">-- Choose Pupil --</option>
+                {% for p in pupils %}
+                <option value="{{ p.id }}">{{ p.admission_no or 'N/A' }} - {{ p.full_name }}</option>
+                {% endfor %}
+            </select>
         </div>
-        {% endfor %}
-    </div>
 
-    <div class="mt-4">
-        <button type="submit" class="btn btn-lg w-100 text-white fw-bold" style="background:#0d9488;">
-            <i class="fa fa-floppy-o"></i> Commit and Securely Save Student Results
-        </button>
-    </div>
-</form>
+        <h5 class="fw-bold mb-3" style="color:#1e3a8a;">
+            <i class="fa fa-pencil-square-o"></i> Marks Entry - {{ exam_month }} - {{ exam_type }}
+        </h5>
+        <div class="row g-3">
+            {% for s in subjects %}
+            {% set cfg = subject_colors.get(s.name, {'border':'#cbd5e1','bg':'#f1f5f9','text':'#475569'}) %}
+            <div class="col-md-4 col-lg-3">
+                <div class="p-3 rounded" style="background:{{ cfg.bg }}; border-left:5px solid {{ cfg.border }};">
+                    <label class="fw-bold mb-2" style="color:{{ cfg.text }}; font-size:13px;">
+                        <i class="fa fa-book"></i> {{ s.name }}
+                    </label>
+                    <input type="number" name="marks[{{ s.name }}]" class="form-control"
+                           min="0" max="100" step="0.5" placeholder="0-100">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-lg w-100 text-white fw-bold" style="background:#0d9488;">
+                <i class="fa fa-save"></i> Save Marks
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- BATCH MODE -->
+<div id="batchMode" style="display:none;">
+    <form method="POST" action="{{ url_for('gradebook_save_batch') }}">
+        <input type="hidden" name="academic_year" value="{{ academic_year }}">
+        <input type="hidden" name="term_name" value="{{ selected_term_name }}">
+        <input type="hidden" name="exam_month" value="{{ exam_month }}">
+        <input type="hidden" name="exam_type" value="{{ exam_type }}">
+        <input type="hidden" name="class_id" value="{{ class_id }}">
+        {% if stream_id %}<input type="hidden" name="stream_id" value="{{ stream_id }}">{% endif %}
+
+        <div class="card-modern">
+            <h5 class="fw-bold mb-3" style="color:#1e3a8a;">
+                <i class="fa fa-users"></i> Batch Entry - {{ exam_month }} - {{ exam_type }}
+            </h5>
+            <p class="text-muted small">Fill in the marks for each pupil. Leave blank to skip a subject.</p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm align-middle" style="font-size:12.5px;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width:40px;">#</th>
+                            <th style="width:180px;">Pupil Name</th>
+                            {% for s in subjects %}
+                            <th style="min-width:70px;">{{ s.name }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in pupils %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td class="fw-bold">{{ p.full_name }}</td>
+                            {% for s in subjects %}
+                            <td>
+                                <input type="number" min="0" max="100" step="0.5"
+                                       name="marks_{{ p.id }}_{{ s.id }}"
+                                       class="form-control form-control-sm"
+                                       placeholder="-">
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <button type="submit" class="btn btn-lg w-100 text-white fw-bold mt-3" style="background:#0d9488;">
+                <i class="fa fa-save"></i> Save All Marks
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function switchMode(mode) {
+    var single = document.getElementById('singleMode');
+    var batch = document.getElementById('batchMode');
+    var btnS = document.getElementById('btnSingle');
+    var btnB = document.getElementById('btnBatch');
+    if (mode === 'single') {
+        single.style.display = 'block';
+        batch.style.display = 'none';
+        btnS.classList.add('active');
+        btnB.classList.remove('active');
+    } else {
+        single.style.display = 'none';
+        batch.style.display = 'block';
+        btnS.classList.remove('active');
+        btnB.classList.add('active');
+    }
+}
+</script>
+
 {% elif class_id %}
-<div class="alert alert-info">Select Term, Month, Exam Type, and Class to load the pupil list.</div>
+<div class="alert alert-info">Choose Term, Month, Exam Type to load pupils.</div>
 {% else %}
-<div class="alert alert-secondary">Choose filters above to begin entering results.</div>
+<div class="alert alert-secondary">Choose filters above to begin entering marks.</div>
 {% endif %}
 {% endblock %}

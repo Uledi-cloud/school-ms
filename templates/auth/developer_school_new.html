@@ -1,0 +1,128 @@
+﻿{% extends "base.html" %}
+{% block page_title %}{{ 'Edit School' if school else 'Register New School' }}{% endblock %}
+{% block content %}
+
+<div class="card-modern">
+    <h3 style="font-weight:800; color:#7c3aed;">
+        <i class="fa fa-university"></i>
+        {{ 'Edit: ' + school.name if school else 'Register New School + First Admin' }}
+    </h3>
+    <p class="text-muted">
+        Fill in school details. First payment of TZS 70,000 is due 1 hour after registration.
+    </p>
+    <hr>
+
+    <form method="POST" enctype="multipart/form-data">
+
+        <h5 style="font-weight:800; color:#0284c7;">
+            <i class="fa fa-building"></i> School Information
+        </h5>
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <label class="small fw-bold">School Name *</label>
+                <input name="name" class="form-control" required value="{{ school.name if school else '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">Motto / Slogan</label>
+                <input name="motto" class="form-control" value="{{ school.motto if school else '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">Head Teacher Name</label>
+                <input name="head_teacher_name" class="form-control" value="{{ school.head_teacher_name if school else '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">Year Established</label>
+                <input name="established_year" class="form-control" value="{{ school.established_year if school else '' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="small fw-bold">Region</label>
+                <input name="region" class="form-control" value="{{ school.region if school else '' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="small fw-bold">District</label>
+                <input name="district" class="form-control" value="{{ school.district if school else '' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="small fw-bold">Postal Address</label>
+                <input name="postal_address" class="form-control" value="{{ school.postal_address if school else '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">Physical Address</label>
+                <input name="address" class="form-control" value="{{ school.address if school else '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="small fw-bold">Phone 1</label>
+                <input name="phone" class="form-control" value="{{ school.phone if school else '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="small fw-bold">Phone 2</label>
+                <input name="phone_2" class="form-control" value="{{ school.phone_2 if school else '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">Email</label>
+                <input name="email" type="email" class="form-control" value="{{ school.email if school else '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">Website</label>
+                <input name="website" class="form-control" value="{{ school.website if school else '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">Registration Number</label>
+                <input name="registration_number" class="form-control" value="{{ school.registration_number if school else '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">NECTA / Exam Centre Number</label>
+                <input name="necta_number" class="form-control" value="{{ school.necta_number if school else '' }}">
+            </div>
+            <div class="col-md-12">
+                <label class="small fw-bold">School Logo</label>
+                <input type="file" name="logo" class="form-control" accept="image/*">
+                {% if school and school.logo_path %}
+                <div class="mt-3">
+                    <img src="{{ school.logo_path }}" style="max-height:100px; border:1px solid #e2e8f0; padding:5px; border-radius:6px;">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if not school %}
+        <hr class="my-4">
+
+        <h5 style="font-weight:800; color:#16a34a;">
+            <i class="fa fa-user-shield"></i> First Administrator Account
+        </h5>
+        <p class="text-muted small">
+            This admin will log in with their <strong>email or phone</strong> and default password
+            <strong>{{ default_password }}</strong>.
+        </p>
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <label class="small fw-bold">Admin Email or Phone *</label>
+                <input name="admin_contact" class="form-control" required
+                       placeholder="admin@school.com or +255712345678">
+                <small class="text-muted">Required — this becomes the admin's login.</small>
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">Admin Full Name</label>
+                <input name="admin_full_name" class="form-control"
+                       placeholder="e.g. Mr. John Mwangi">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">Admin Password</label>
+                <input name="admin_password" class="form-control" value="{{ default_password }}">
+            </div>
+        </div>
+        {% endif %}
+
+        <hr class="my-4">
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-lg text-white" style="background:#7c3aed;">
+                <i class="fa fa-save"></i>
+                {{ 'Save Changes' if school else 'Register School & Create Admin' }}
+            </button>
+            <a href="{{ url_for('auth.developer_schools') }}" class="btn btn-lg btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

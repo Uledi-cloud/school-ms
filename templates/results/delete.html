@@ -1,0 +1,71 @@
+﻿{% extends "base.html" %}
+{% block page_title %}Delete Examination Results{% endblock %}
+{% block content %}
+<div class="card-modern mb-4">
+    <h5 class="fw-bold mb-3" style="color:#dc2626;"><i class="fa fa-trash"></i> Select Pupil & Exam Cycle to Purge</h5>
+    <form method="GET" class="row g-3">
+        <div class="col-md-2">
+            <label class="small fw-bold">YEAR</label>
+            <select name="academic_year" class="form-select" onchange="this.form.submit()">
+                {% for y in years %}<option value="{{ y }}" {% if academic_year==y %}selected{% endif %}>{{ y }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="small fw-bold">TERM</label>
+            <select name="term_id" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Term --</option>
+                {% for t in terms %}<option value="{{ t.id }}" {% if term_id==t.id %}selected{% endif %}>{{ t.term_name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="small fw-bold">EXAM TYPE</label>
+            <select name="exam_type" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Exam --</option>
+                {% for term_key, months in academic_schedule.items() %}
+                    {% for m, e in months.items() %}<option value="{{ e }}" {% if exam_type==e %}selected{% endif %}>{{ e }}</option>{% endfor %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="small fw-bold">CLASS</label>
+            <select name="class_id" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Class --</option>
+                {% for c in classes %}<option value="{{ c.id }}" {% if class_id==c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-1">
+            <label class="small fw-bold">STREAM</label>
+            <select name="stream_id" class="form-select" onchange="this.form.submit()">
+                <option value="">All</option>
+                {% for s in streams %}<option value="{{ s.id }}" {% if stream_id==s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+
+{% if pupils %}
+<form method="POST" onsubmit="return confirm('WARNING: Permanently delete all scores for this pupil under this exam?');">
+    <input type="hidden" name="academic_year" value="{{ academic_year }}">
+    <input type="hidden" name="term_name" value="{{ term_name }}">
+    <input type="hidden" name="exam_type" value="{{ exam_type }}">
+    <div class="card-modern" style="border-color:#fecaca;">
+        <div class="mb-3">
+            <label class="fw-bold" style="color:#dc2626;">Select Pupil to Purge ({{ exam_type }} — {{ term_name }} {{ academic_year }})</label>
+            <select name="pupil_id" class="form-select form-select-lg" required style="border-color:#fecaca; color:#dc2626;">
+                <option value="">-- Choose Pupil --</option>
+                {% for p in pupils %}
+                <option value="{{ p.id }}">{{ p.admission_no }} - {{ p.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn btn-lg w-100 text-white" style="background:#dc2626;">
+            <i class="fa fa-trash"></i> Permanently Purge Examination Scores
+        </button>
+    </div>
+</form>
+{% elif class_id %}
+<div class="alert alert-warning">No pupils found in this class/stream.</div>
+{% else %}
+<div class="alert alert-secondary">Choose filters to load the pupil list.</div>
+{% endif %}
+{% endblock %}

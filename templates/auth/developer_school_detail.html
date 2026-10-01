@@ -1,0 +1,96 @@
+﻿{% extends "base.html" %}
+{% block page_title %}School Details{% endblock %}
+{% block content %}
+
+<div class="card-modern mb-4" style="border-left:5px solid #7c3aed;">
+    <div class="d-flex align-items-center gap-3">
+        {% if school.logo_path %}
+        <img src="{{ school.logo_path }}" style="width:80px; height:80px; object-fit:contain; border:1px solid #e2e8f0; border-radius:8px; padding:6px;">
+        {% endif %}
+        <div>
+            <h3 style="font-weight:800; margin:0; color:#1e3a8a;">{{ school.name }}</h3>
+            <small class="text-muted">Code: <code>{{ school.slug }}</code> | {{ school.region or '-' }}, {{ school.district or '-' }}</small>
+        </div>
+        <div class="ms-auto">
+            <a href="{{ url_for('auth.developer_school_edit', school_id=school.id) }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+            <a href="{{ url_for('auth.developer_schools') }}" class="btn btn-secondary">Back</a>
+        </div>
+    </div>
+</div>
+
+<div class="card-modern mb-4" style="border-left:5px solid #d97706;">
+    <h5 style="font-weight:800; color:#d97706;"><i class="fa fa-money"></i> Payment Info</h5>
+    <div class="row g-3">
+        <div class="col-md-3"><strong>Token:</strong><br><code style="font-size:14px;">{{ school.payment_token }}</code></div>
+        <div class="col-md-3"><strong>Monthly Fee:</strong><br>TZS {{ '{:,}'.format(school.monthly_fee or 70000) }}</div>
+        <div class="col-md-3"><strong>Status:</strong><br>
+            {% if school.payment_status == 'paid' %}<span class="badge bg-success">PAID</span>
+            {% elif school.payment_status == 'overdue' %}<span class="badge bg-danger">OVERDUE</span>
+            {% else %}<span class="badge bg-warning">PENDING</span>{% endif %}
+        </div>
+        <div class="col-md-3"><strong>Next Due:</strong><br>{{ school.next_due_at.strftime('%Y-%m-%d %H:%M') if school.next_due_at else '-' }}</div>
+    </div>
+
+    {% if payments %}
+    <hr>
+    <h6 style="font-weight:800;">Payment History</h6>
+    <table class="table table-sm">
+        <thead><tr><th>Date</th><th>Amount</th><th>Token</th><th>Reference</th><th>Method</th></tr></thead>
+        <tbody>
+        {% for p in payments %}
+        <tr>
+            <td>{{ p.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td><strong>TZS {{ '{:,}'.format(p.amount) }}</strong></td>
+            <td><code>{{ p.token_used or '-' }}</code></td>
+            <td>{{ p.reference or '-' }}</td>
+            <td>{{ p.method or '-' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card-modern">
+            <h5 style="font-weight:800;">Admins ({{ admins|length }})</h5>
+            <table class="table table-sm">
+                <tbody>{% for u in admins %}
+                <tr><td><strong>{{ u.username }}</strong></td><td>{{ u.full_name or '-' }}</td><td>{% if u.is_active_flag %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Off</span>{% endif %}</td></tr>
+                {% endfor %}</tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card-modern">
+            <h5 style="font-weight:800;">Teachers ({{ teachers|length }})</h5>
+            <table class="table table-sm">
+                <tbody>{% for u in teachers %}
+                <tr><td>{{ u.username }}</td><td>{{ u.full_name or '-' }}</td></tr>
+                {% else %}<tr><td colspan="2" class="text-center text-muted">None</td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card-modern">
+            <h5 style="font-weight:800;">Parents ({{ parents|length }})</h5>
+            <table class="table table-sm">
+                <tbody>{% for u in parents %}
+                <tr><td>{{ u.username }}</td><td>{{ u.full_name or '-' }}</td></tr>
+                {% else %}<tr><td colspan="2" class="text-center text-muted">None</td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card-modern">
+            <h5 style="font-weight:800;">Pupils ({{ pupils|length }})</h5>
+            <table class="table table-sm">
+                <tbody>{% for u in pupils %}
+                <tr><td>{{ u.username }}</td><td>{{ u.full_name or '-' }}</td></tr>
+                {% else %}<tr><td colspan="2" class="text-center text-muted">None</td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

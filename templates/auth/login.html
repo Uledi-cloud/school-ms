@@ -1,23 +1,332 @@
-﻿{% extends "base.html" %}
-{% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-body">
-                <h3 class="text-center mb-4">School Login</h3>
-                <form method="POST">
-                    <div class="mb-3">
-                        <label>Username</label>
-                        <input name="username" class="form-control" required autofocus>
-                    </div>
-                    <div class="mb-3">
-                        <label>Password</label>
-                        <input type="password" name="password" class="form-control" required>
-                    </div>
-                    <button class="btn btn-primary w-100">Login</button>
-                </form>
-            </div>
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Login</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-image: url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            position: relative;
+        }
+
+        /* Dark overlay for readability */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(15, 23, 42, 0.75) 0%,
+                rgba(30, 58, 138, 0.65) 100%
+            );
+            z-index: 0;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 45px 40px;
+            border-radius: 20px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 470px;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .brand-header .icon {
+            font-size: 90px;
+            line-height: 1;
+            margin-bottom: 15px;
+            display: inline-block;
+            animation: bounce 3s ease-in-out infinite;
+            filter: drop-shadow(0 6px 12px rgba(30, 58, 138, 0.3));
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .brand-header h2 {
+            color: #1e3a8a;
+            font-weight: 900;
+            font-size: 28px;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .brand-header p {
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #e2e8f0;
+            margin: 20px 0;
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 800;
+            color: #334155;
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 13px 15px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+            background-color: #f8fafc;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            border-color: #1e3a8a;
+            background-color: #ffffff;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: all 0.25s;
+            box-shadow: 0 6px 16px rgba(30, 58, 138, 0.35);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(30, 58, 138, 0.45);
+        }
+
+        .btn-submit:active { transform: translateY(0); }
+
+        .hint {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+            display: block;
+            font-weight: 600;
+        }
+        .hint.error { color: #dc2626; }
+        .hint.success { color: #16a34a; }
+        .hint.warning { color: #d97706; }
+
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 22px;
+            line-height: 1.6;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .flash-msg {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            animation: shake 0.4s ease-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .flash-success { background: #dcfce7; color: #166534; border-left: 4px solid #16a34a; }
+        .flash-danger  { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
+        .flash-warning { background: #fef3c7; color: #92400e; border-left: 4px solid #d97706; }
+        .flash-info    { background: #dbeafe; color: #1e40af; border-left: 4px solid #1e3a8a; }
+
+        @media (max-width: 520px) {
+            body { padding: 12px; background-attachment: scroll; }
+            .login-container { padding: 30px 22px; max-width: 100%; border-radius: 16px; }
+            .brand-header .icon { font-size: 70px; }
+            .brand-header h2 { font-size: 22px; }
+            .brand-header p { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="brand-header">
+            <div class="icon">🎓</div>
+            <h2>School Management System</h2>
+            <p>Sign in to your account</p>
         </div>
+
+        <hr>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, msg in messages %}
+            <div class="flash-msg flash-{{ category }}">{{ msg }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        <form action="{{ url_for('auth.login') }}" method="POST" id="loginForm">
+
+            <div class="form-group">
+                <label for="schoolSelect">Select Registered School</label>
+                <select id="schoolSelect" name="school_id">
+                    <option value="" disabled selected>Loading schools...</option>
+                </select>
+                <small class="hint" id="schoolHint">Pick your school from the list</small>
+            </div>
+
+            <div class="form-group">
+                <label for="roleSelect">Role</label>
+                <select id="roleSelect" name="role" required>
+                    <option value="" disabled selected>-- Select your role --</option>
+                    <option value="developer">Developer</option>
+                    <option value="admin">Admin</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="pupil">Pupil</option>
+                    <option value="parent">Parent</option>
+                </select>
+                <small class="hint" id="roleHint">Choose your account type</small>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Username / Email / Phone / Admission No</label>
+                <input type="text" id="username" name="username"
+                       placeholder="Enter your login" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password"
+                       placeholder="Enter your password" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn-submit">Sign In</button>
+        </form>
+
+        <p class="footer-note">
+            Accounts are created by the school administrator.<br>
+            Contact your school office if you need help.
+        </p>
     </div>
-</div>
-{% endblock %}
+
+    <script>
+        var schoolSelect = document.getElementById('schoolSelect');
+        var roleSelect = document.getElementById('roleSelect');
+        var schoolHint = document.getElementById('schoolHint');
+        var roleHint = document.getElementById('roleHint');
+
+        function fetchSchools() {
+            fetch('{{ url_for("auth.api_schools") }}')
+                .then(function(res) { return res.json(); })
+                .then(function(schools) {
+                    schoolSelect.innerHTML = '<option value="" disabled selected>-- Choose your school --</option>';
+                    if (schools.length === 0) {
+                        var opt = document.createElement('option');
+                        opt.value = '';
+                        opt.disabled = true;
+                        opt.textContent = 'No schools registered yet';
+                        schoolSelect.appendChild(opt);
+                        schoolHint.textContent = 'Log in as Developer to register a school first.';
+                        schoolHint.className = 'hint warning';
+                    } else {
+                        schools.forEach(function(school) {
+                            var option = document.createElement('option');
+                            option.value = school.id;
+                            option.textContent = school.name;
+                            schoolSelect.appendChild(option);
+                        });
+                        schoolHint.textContent = 'Pick your school from the list';
+                        schoolHint.className = 'hint';
+                    }
+                    updateSchoolRequirement();
+                })
+                .catch(function() {
+                    schoolSelect.innerHTML = '<option value="" disabled selected>Error loading schools</option>';
+                    schoolHint.textContent = 'Could not load schools. Refresh the page.';
+                    schoolHint.className = 'hint error';
+                });
+        }
+
+        function updateSchoolRequirement() {
+            var role = roleSelect.value;
+            if (role === 'developer') {
+                schoolSelect.removeAttribute('required');
+                schoolSelect.value = '';
+                schoolHint.textContent = 'Not required for Developer.';
+                schoolHint.className = 'hint success';
+                roleHint.textContent = 'Developer does not belong to a school.';
+                roleHint.className = 'hint success';
+            } else if (role === '') {
+                schoolSelect.removeAttribute('required');
+                schoolHint.textContent = 'Pick your school from the list';
+                schoolHint.className = 'hint';
+                roleHint.textContent = 'Choose your account type';
+                roleHint.className = 'hint';
+            } else {
+                schoolSelect.setAttribute('required', 'required');
+                schoolHint.textContent = 'Required for ' + role + ' accounts.';
+                schoolHint.className = 'hint warning';
+                roleHint.textContent = 'Selected: ' + role;
+                roleHint.className = 'hint success';
+            }
+        }
+
+        roleSelect.addEventListener('change', updateSchoolRequirement);
+        document.addEventListener('DOMContentLoaded', fetchSchools);
+    </script>
+
+</body>
+</html>

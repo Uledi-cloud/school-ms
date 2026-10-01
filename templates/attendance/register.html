@@ -1,0 +1,71 @@
+﻿{% extends "base.html" %}
+{% block page_title %}Attendance & Enrolment{% endblock %}
+{% block content %}
+<div class="card-modern mb-4">
+    <form method="GET" class="row g-3">
+        <div class="col-md-3">
+            <label class="small fw-bold">CLASS</label>
+            <select name="class_id" class="form-select" required onchange="this.form.submit()">
+                <option value="">Select Class...</option>
+                {% for c in classes %}
+                <option value="{{ c.id }}" {% if class_id==c.id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="small fw-bold">STREAM</label>
+            <select name="stream_id" class="form-select" onchange="this.form.submit()">
+                <option value="">All Streams</option>
+                {% for s in streams %}
+                <option value="{{ s.id }}" {% if stream_id==s.id %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="small fw-bold">DATE</label>
+            <input type="date" name="attendance_date" class="form-control" value="{{ attendance_date }}" required>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-primary w-100">Load Register</button>
+        </div>
+    </form>
+</div>
+
+{% if pupils %}
+<form method="POST">
+    <div class="card-modern">
+        <h5 class="fw-bold mb-3" style="color:#1e3a8a;">
+            <i class="fa fa-list"></i> Enrolment Register - {{ attendance_date }}
+        </h5>
+        <table class="table table-bordered align-middle">
+            <thead class="table-dark">
+                <tr><th>#</th><th>Admission</th><th>Pupil Name</th><th style="width:35%;">Status</th></tr>
+            </thead>
+            <tbody>
+                {% for p in pupils %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ p.admission_no or '-' }}</strong></td>
+                    <td>{{ p.full_name }}</td>
+                    <td>
+                        <div class="d-flex gap-3">
+                            <label><input type="radio" name="status_{{ p.id }}" value="Present" {% if existing_status[p.id]=='Present' %}checked{% endif %}> <span style="color:#16a34a; font-weight:700;">Present</span></label>
+                            <label><input type="radio" name="status_{{ p.id }}" value="Absent" {% if existing_status[p.id]=='Absent' %}checked{% endif %}> <span style="color:#dc2626; font-weight:700;">Absent</span></label>
+                            <label><input type="radio" name="status_{{ p.id }}" value="Late" {% if existing_status[p.id]=='Late' %}checked{% endif %}> <span style="color:#d97706; font-weight:700;">Late</span></label>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="text-end mt-3">
+            <button class="btn btn-lg text-white" style="background:#db2777;"><i class="fa fa-save"></i> Save Attendance Register</button>
+        </div>
+    </div>
+</form>
+{% elif class_id %}
+<div class="alert alert-info">No pupils found in this class/stream.</div>
+{% else %}
+<div class="alert alert-secondary">Select a class to load the attendance register.</div>
+{% endif %}
+{% endblock %}

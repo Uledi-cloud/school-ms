@@ -1,13 +1,89 @@
-﻿{% extends "base.html" %}
-{% block content %}
-<h2>Select Pupil</h2>
-<table class="table table-striped mt-3">
-    <thead><tr><th>#</th><th>Name</th><th>Action</th></tr></thead>
-    <tbody>
-    {% for p in pupils %}
-    <tr><td>{{ loop.index }}</td><td>{{ p.full_name }}</td>
-        <td><a href="{{ url_for('generate_report', pupil_id=p.id, exam_id=exam_id) }}" class="btn btn-sm btn-success">View Report Card</a></td></tr>
-    {% endfor %}
-    </tbody>
-</table>
-{% endblock %}
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Pupil for Report Card</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; padding: 30px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .topbar { background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #fff; padding: 22px 28px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+        .topbar h1 { font-size: 20px; font-weight: 800; margin: 0; }
+        .topbar p { margin: 4px 0 0 0; opacity: 0.85; font-size: 12.5px; }
+        .topbar a { color: #fff; text-decoration: underline; font-weight: 700; font-size: 13px; }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .info-bar { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 18px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; }
+        .info-bar span { color: #64748b; font-weight: 600; }
+        .info-bar strong { color: #1e3a8a; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; }
+        th { background: #f1f5f9; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; }
+        tr:hover td { background: #f8fafc; }
+        .btn-view { padding: 8px 14px; background: #dc2626; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-view:hover { background: #b91c1c; }
+        .empty { text-align: center; padding: 40px; color: #94a3b8; font-size: 14px; }
+        .flash { padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 15px; }
+        .flash.warning { background: #fef3c7; color: #92400e; }
+        .flash.danger { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="topbar">
+        <div>
+            <h1>Select Pupil for Report Card</h1>
+            <p>Click a pupil to view and print their report card</p>
+        </div>
+        <a href="{{ url_for('reports') }}">Back to Filters</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, msg in messages %}
+        <div class="flash {{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% if not exam %}
+    <div class="flash warning">
+        No examination exists yet for <strong>{{ term }} {{ academic_year }}</strong>. Enter marks first.
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="info-bar">
+            <div><span>Class:</span> <strong>{{ selected_class.name if selected_class else '-' }}</strong></div>
+            {% if selected_stream %}<div><span>Stream:</span> <strong>{{ selected_stream.name }}</strong></div>{% endif %}
+            <div><span>Year:</span> <strong>{{ academic_year }}</strong></div>
+            <div><span>Term:</span> <strong>{{ term }}</strong></div>
+            {% if exam %}<div><span>Exam:</span> <strong>{{ exam.name }}</strong></div>{% endif %}
+            <div><span>Pupils:</span> <strong>{{ pupils|length }}</strong></div>
+        </div>
+
+        {% if pupils and exam_id %}
+        <table>
+            <thead>
+                <tr><th style="width:50px;">#</th><th>Admission No</th><th>Pupil Name</th><th>Gender</th><th style="width:180px;">Action</th></tr>
+            </thead>
+            <tbody>
+                {% for p in pupils %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ p.admission_no or '-' }}</strong></td>
+                    <td>{{ p.full_name }}</td>
+                    <td>{{ p.gender or '-' }}</td>
+                    <td>
+                        <a class="btn-view" href="{{ url_for('report_card', pupil_id=p.id, exam_id=exam_id) }}" target="_blank">View Report Card</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% elif pupils %}
+        <div class="empty">Pupils listed above, but no exam found for {{ term }} {{ academic_year }}. Enter marks first.</div>
+        {% else %}
+        <div class="empty">No pupils found for the selected class and stream.</div>
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>

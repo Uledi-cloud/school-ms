@@ -1,0 +1,185 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marklist — {{ selected_class.name if selected_class else "Class" }} {{ exam.term if exam else "" }} {{ exam.year if exam else "" }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #e2e8f0; padding: 15px; color: #000; }
+        .no-print { max-width: 1100px; margin: 0 auto 12px auto; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+        .no-print button, .no-print a { padding: 10px 18px; border: none; border-radius: 6px; font-weight: 800; font-size: 12.5px; cursor: pointer; text-decoration: none; color: #fff; }
+        .btn-print { background: #16a34a; }
+        .btn-back { background: #64748b; }
+        .page { max-width: 1100px; margin: 0 auto 20px auto; background: #fff; border: 1.5px solid #0f172a; padding: 20px 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .page-header { text-align: center; margin-bottom: 8px; }
+        .page-header h1 { font-size: 17px; font-weight: 800; color: #0f172a; margin: 2px 0; }
+        .page-header h2 { font-size: 14px; font-weight: 800; color: #1e3a8a; margin: 2px 0; text-transform: uppercase; }
+        .page-header p { font-size: 11.5px; font-weight: 700; color: #475569; margin: 2px 0; }
+        table.main-table { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-top: 10px; }
+        table.main-table th, table.main-table td { border: 1px solid #0f172a; padding: 4px 3px; text-align: center; }
+        table.main-table th { background: #1e3a8a; color: #fff; font-weight: 800; text-transform: uppercase; font-size: 9.5px; }
+        table.main-table th.sub-head { background: #0d9488; font-size: 9px; }
+        table.main-table th.subject-col { background: #1e3a8a; text-align: left; padding-left: 6px; font-size: 10px; }
+        table.main-table th.perf-col { background: #7c3aed; font-size: 9.5px; }
+        table.main-table td.pupil-name { text-align: left; padding-left: 6px; font-weight: 700; }
+        table.main-table td.sn { font-weight: 800; }
+        table.main-table td.score { font-weight: 700; color: #0f172a; }
+        table.main-table td.grade { font-weight: 800; color: #b45309; }
+        table.main-table td.total { font-weight: 800; color: #0369a1; }
+        table.main-table td.average { font-weight: 800; color: #047857; }
+        table.main-table td.overall-grade { font-weight: 800; color: #7c3aed; }
+        table.main-table td.position { font-weight: 800; color: #dc2626; }
+        table.main-table tr:nth-child(even) td { background: #f8fafc; }
+        table.main-table tr:nth-child(even) td.pupil-name { background: #f1f5f9; }
+        table.subject-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        table.subject-table th, table.subject-table td { border: 1px solid #0f172a; padding: 6px 5px; text-align: center; }
+        table.subject-table th { background: #1e3a8a; color: #fff; font-weight: 800; text-transform: uppercase; font-size: 10px; }
+        table.subject-table td.sub-name { text-align: left; padding-left: 8px; font-weight: 800; color: #1e3a8a; }
+        table.subject-table td.a-count { font-weight: 800; color: #16a34a; }
+        table.subject-table td.b-count { font-weight: 800; color: #0284c7; }
+        table.subject-table td.c-count { font-weight: 800; color: #d97706; }
+        table.subject-table td.d-count { font-weight: 800; color: #dc2626; }
+        table.subject-table td.f-count { font-weight: 800; color: #7c3aed; }
+        table.subject-table td.avg-cell { font-weight: 800; color: #0369a1; }
+        table.subject-table td.grade-cell { font-weight: 800; color: #b45309; }
+        table.subject-table td.pos-cell { font-weight: 800; color: #7c3aed; }
+        table.subject-table td.status { font-weight: 800; color: #16a34a; font-size: 10px; }
+        table.subject-table td.reg-cell { font-weight: 700; }
+        table.subject-table tr:nth-child(even) td { background: #f8fafc; }
+        .no-data { background: #fef3c7; border: 1px solid #fcd34d; padding: 15px; border-radius: 6px; color: #92400e; font-weight: 700; font-size: 13px; text-align: center; margin-top: 20px; }
+        .footer-note { text-align: center; font-size: 9.5px; color: #64748b; margin-top: 12px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
+        @media print {
+            @page { size: A4 landscape; margin: 8mm; }
+            body { background: #fff; padding: 0; }
+            .no-print { display: none !important; }
+            .page { box-shadow: none; border: none; padding: 0; max-width: 100%; margin: 0; page-break-after: always; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            .page:last-child { page-break-after: auto; }
+            table.main-table th, table.main-table td, table.subject-table th, table.subject-table td { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            table.main-table { font-size: 9px; }
+            table.main-table th, table.main-table td { padding: 2px 2px; }
+            table.subject-table { font-size: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="btn-print" onclick="window.print()">Print Marklist</button>
+        <a class="btn-back" href="{{ url_for('index') }}">Back</a>
+    </div>
+
+    <div class="page">
+        <div class="page-header">
+            <h1>{{ school.name if school else "School Name" }}</h1>
+            {% if school and school.address %}<p>{{ school.address }}</p>{% endif %}
+            <h2>{{ selected_class.name if selected_class else "" }} — MARKLIST</h2>
+            <p>{{ exam.name if exam else "" }}{% if exam %} | {{ exam.term }} {{ exam.year }}{% endif %}{% if selected_stream %} | Stream: {{ selected_stream.name }}{% endif %}</p>
+        </div>
+
+        {% if pupils_data and subject_columns %}
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" class="subject-col" style="width: 3%;">S/N</th>
+                    <th rowspan="2" class="subject-col" style="width: 20%;">PUPIL NAME</th>
+                    <th rowspan="2" style="width: 4%;">SEX</th>
+                    {% for subj in subject_columns %}
+                    <th colspan="2" class="sub-head">{{ subj.name|upper }}</th>
+                    {% endfor %}
+                    <th rowspan="2" class="perf-col" style="width: 4%;">TOTAL</th>
+                    <th rowspan="2" class="perf-col" style="width: 5%;">AVG</th>
+                    <th rowspan="2" class="perf-col" style="width: 4%;">GRD</th>
+                    <th rowspan="2" class="perf-col" style="width: 4%;">POS</th>
+                </tr>
+                <tr>
+                    {% for subj in subject_columns %}
+                    <th class="sub-head" style="width: 4%;">Mk</th>
+                    <th class="sub-head" style="width: 3%;">Gr</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in pupils_data %}
+                <tr>
+                    <td class="sn">{{ loop.index }}</td>
+                    <td class="pupil-name">{{ row.pupil.full_name|upper }}</td>
+                    <td>{{ "M" if row.pupil.gender == "Male" else ("F" if row.pupil.gender == "Female" else "-") }}</td>
+                    {% for subj in subject_columns %}
+                        {% set mark = row.marks.get(subj.id) %}
+                        {% if mark is not none %}
+                        <td class="score">{{ mark|round(0)|int }}</td>
+                        <td class="grade">{{ row.grades.get(subj.id, "-") }}</td>
+                        {% else %}
+                        <td class="score">-</td>
+                        <td class="grade">-</td>
+                        {% endif %}
+                    {% endfor %}
+                    <td class="total">{{ row.total|round(0)|int }}</td>
+                    <td class="average">{{ row.average }}</td>
+                    <td class="overall-grade">{{ row.grade }}</td>
+                    <td class="position">{{ row.position }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-data">No marks recorded for this class and examination. Please enter marks via the Gradebook first.</div>
+        {% endif %}
+
+        <div class="footer-note">{{ school.name if school else "School" }} — Generated {{ exam.year if exam else "" }}</div>
+    </div>
+
+    {% if subject_analysis %}
+    <div class="page">
+        <div class="page-header">
+            <h1>{{ school.name if school else "School Name" }}</h1>
+            <h2>SUBJECT PERFORMANCE ANALYSIS</h2>
+            <p>{{ selected_class.name if selected_class else "" }} | {{ exam.name if exam else "" }}{% if exam %} | {{ exam.term }} {{ exam.year }}{% endif %}{% if selected_stream %} | Stream: {{ selected_stream.name }}{% endif %}</p>
+        </div>
+
+        <table class="subject-table">
+            <thead>
+                <tr>
+                    <th style="width: 3%;">S/N</th>
+                    <th style="width: 20%;">SUBJECT</th>
+                    <th style="width: 5%;">A</th>
+                    <th style="width: 5%;">B</th>
+                    <th style="width: 5%;">C</th>
+                    <th style="width: 5%;">D</th>
+                    <th style="width: 5%;">F</th>
+                    <th style="width: 8%;">AVERAGE</th>
+                    <th style="width: 6%;">GRADE</th>
+                    <th style="width: 6%;">POS</th>
+                    <th style="width: 10%;">SCORE STATUS</th>
+                    <th style="width: 5%;">REG</th>
+                    <th style="width: 5%;">ATT</th>
+                    <th style="width: 5%;">ABS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in subject_analysis %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="sub-name">{{ s.name|upper }}</td>
+                    <td class="a-count">{{ s.a_count }}</td>
+                    <td class="b-count">{{ s.b_count }}</td>
+                    <td class="c-count">{{ s.c_count }}</td>
+                    <td class="d-count">{{ s.d_count }}</td>
+                    <td class="f-count">{{ s.f_count }}</td>
+                    <td class="avg-cell">{{ s.average }}</td>
+                    <td class="grade-cell">{{ s.grade }}</td>
+                    <td class="pos-cell">{{ s.position }}</td>
+                    <td class="status">{{ s.status }}</td>
+                    <td class="reg-cell">{{ s.registered }}</td>
+                    <td class="reg-cell">{{ s.attended }}</td>
+                    <td class="reg-cell">{{ s.absent }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="footer-note">{{ school.name if school else "School" }} — Subject Performance Analysis — {{ exam.year if exam else "" }}</div>
+    </div>
+    {% endif %}
+</body>
+</html>

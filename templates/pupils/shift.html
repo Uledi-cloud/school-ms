@@ -1,0 +1,42 @@
+﻿{% extends "base.html" %}
+{% block page_title %}Shift Pupil{% endblock %}
+{% block content %}
+<h2 class="fw-bold" style="color:#1e3a8a;"><i class="fa fa-exchange"></i> Shift Pupil</h2>
+
+<div class="card-modern" style="max-width:600px;">
+    <p><strong>Pupil:</strong> {{ pupil.full_name }} ({{ pupil.admission_no }})</p>
+    <p><strong>Current Class:</strong> {{ pupil.class_.name }}
+       {% if pupil.stream %} ({{ pupil.stream.name }}){% endif %}</p>
+    <hr>
+    <form method="POST">
+        <div class="mb-3">
+            <label class="fw-bold">New Class</label>
+            <select name="new_class_id" class="form-select" required>
+                <option value="">-- Select --</option>
+                {% for c in classes %}
+                <option value="{{ c.id }}" {% if c.id==pupil.class_id %}disabled{% endif %}>
+                    {{ c.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="fw-bold">New Stream (optional)</label>
+            <select name="new_stream_id" class="form-select">
+                <option value="">-- None --</option>
+                {% for s in streams %}
+                <option value="{{ s.id }}">{{ s.class_.name }} - {{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="fw-bold">Reason</label>
+            <input type="text" name="reason" class="form-control" placeholder="e.g. Promoted to next class">
+        </div>
+        <button class="btn btn-warning btn-lg">
+            <i class="fa fa-check"></i> Shift Pupil
+        </button>
+        <a href="{{ url_for('pupils') }}" class="btn btn-secondary btn-lg">Cancel</a>
+    </form>
+</div>
+{% endblock %}

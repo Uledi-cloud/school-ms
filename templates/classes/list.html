@@ -1,17 +1,27 @@
 ﻿{% extends "base.html" %}
 {% block content %}
 <div class="d-flex justify-content-between">
-    <h2>Classes</h2>
+    <h2 class="fw-bold" style="color:#1e3a8a;">Classes</h2>
     <a href="{{ url_for('add_class') }}" class="btn btn-primary">+ Add Class</a>
 </div>
 <table class="table table-striped mt-3">
-    <thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Streams</th><th>Pupils</th><th>Actions</th></tr></thead>
+    <thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Level</th><th>Streams</th><th>Pupils</th><th>Subjects</th><th>Actions</th></tr></thead>
     <tbody>
     {% for c in classes %}
-    <tr><td>{{ c.id }}</td><td>{{ c.name }}</td><td>{{ c.level }}</td>
-        <td>{{ c.streams|length }}</td><td>{{ c.pupils|length }}</td>
-        <td><a href="{{ url_for('edit_class', id=c.id) }}" class="btn btn-sm btn-warning">Edit</a>
-            <a href="{{ url_for('delete_class', id=c.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Del</a></td></tr>
+    <tr>
+        <td>{{ c.id }}</td>
+        <td>{{ c.name }}</td>
+        <td>{{ c.level }}</td>
+        <td>{{ c.streams|length }}</td>
+        <td>{{ c.pupils|length }}</td>
+        <td>{{ c.subjects|length }}</td>
+        <td>
+            <a href="{{ url_for('class_subjects', id=c.id) }}" class="btn btn-sm btn-info">Subjects</a>
+            <a href="{{ url_for('edit_class', id=c.id) }}" class="btn btn-sm btn-warning">Edit</a>
+            <a href="{{ url_for('delete_class', id=c.id) }}" class="btn btn-sm btn-danger"
+               onclick="return confirm('Delete?')">Del</a>
+        </td>
+    </tr>
     {% endfor %}
     </tbody>
 </table>

@@ -1,0 +1,107 @@
+﻿{% extends "base.html" %}
+{% block page_title %}Edit Existing Results{% endblock %}
+{% block content %}
+
+<h2 class="fw-bold" style="color:#d97706;">
+    <i class="fa fa-pencil-square"></i> Edit Existing Results
+</h2>
+<p class="text-muted">Retrieve, modify, and save marks. Changes appear on the report card immediately.</p>
+
+<div class="card-modern mb-4">
+    <form method="GET" class="row g-3">
+        <div class="col-md-2">
+            <label class="small fw-bold">YEAR</label>
+            <select name="academic_year" class="form-select" onchange="this.form.submit()">
+                {% for y in years %}
+                <option value="{{ y }}" {% if academic_year==y %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="small fw-bold">TERM</label>
+            <select name="term_id" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Term --</option>
+                {% for t in terms %}
+                <option value="{{ t.id }}" {% if term_id==t.id %}selected{% endif %}>{{ t.term_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="small fw-bold">EXAM MONTH</label>
+            <select name="exam_month" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Month --</option>
+                {% for term_key, months in academic_schedule.items() %}
+                    {% for month in months.keys() %}
+                    <option value="{{ month }}" {% if exam_month==month %}selected{% endif %}>{{ month }}</option>
+                    {% endfor %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="small fw-bold">EXAM TYPE</label>
+            <select name="exam_type" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Type --</option>
+                {% for term_key, months in academic_schedule.items() %}
+                    {% for month, exam_name in months.items() %}
+                    <option value="{{ exam_name }}" {% if exam_type==exam_name %}selected{% endif %}>{{ exam_name }}</option>
+                    {% endfor %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="small fw-bold">CLASS</label>
+            <select name="class_id" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Class --</option>
+                {% for c in classes %}
+                <option value="{{ c.id }}" {% if class_id==c.id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="small fw-bold">PUPIL</label>
+            <select name="pupil_id" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Pupil --</option>
+                {% for p in pupils %}
+                <option value="{{ p.id }}" {% if pupil_id==p.id %}selected{% endif %}>{{ p.admission_no }} - {{ p.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+
+{% if selected_pupil and existing_marks %}
+<form method="POST">
+    <input type="hidden" name="pupil_id" value="{{ pupil_id }}">
+    <input type="hidden" name="academic_year" value="{{ academic_year }}">
+    <input type="hidden" name="term_name" value="{{ term_name }}">
+    <input type="hidden" name="exam_type" value="{{ exam_type }}">
+    <input type="hidden" name="exam_month" value="{{ exam_month }}">
+
+    <div class="card-modern">
+        <h5 class="fw-bold mb-3" style="color:#d97706;">
+            Editing: {{ selected_pupil.full_name }} - {{ exam_type }} ({{ term_name }} {{ academic_year }})
+        </h5>
+        <div class="row g-3">
+            {% for subj, mark in existing_marks.items() %}
+            <div class="col-md-4 col-lg-3">
+                <div class="p-3 rounded" style="background:#fffbeb; border-left:5px solid #d97706;">
+                    <label class="fw-bold mb-2" style="color:#78350f; font-size:13px;">{{ subj }}</label>
+                    <input type="number" name="marks[{{ subj }}]" class="form-control"
+                           min="0" max="100" step="0.5" value="{{ mark }}" required>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-4">
+            <button class="btn btn-lg text-white" style="background:#d97706;">
+                <i class="fa fa-save"></i> Save Changes
+            </button>
+        </div>
+    </div>
+</form>
+{% elif pupil_id %}
+<div class="alert alert-warning">No existing marks found for this pupil under the selected exam cycle.</div>
+{% else %}
+<div class="alert alert-secondary">Choose all filters above to load the pupil's existing marks.</div>
+{% endif %}
+{% endblock %}

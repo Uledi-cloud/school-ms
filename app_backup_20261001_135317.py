@@ -6,7 +6,7 @@ from datetime import datetime, date
 from config import Config
 from models import (db, User, Class, Stream, Staff, Pupil, Examination,
                     Subject, Result, Notification, AuditLog, TermBoundary,
-                    Attendance, School, PupilShift)
+                    Attendance, School)
 from forms import (PupilForm, ClassForm, StreamForm, StaffForm,
                    ExaminationForm, NotificationForm)
 from auth import auth_bp
@@ -76,7 +76,7 @@ ACADEMIC_SCHEDULE = {
     'Term II': {
         'July':      'July Monthly Exam',
         'August':    'August Monthly Exam',
-        'September': 'Mid-Term II',
+        'September': 'September Mid-Term Exam',
         'October':   'October Monthly Exam',
         'November':  'Annual Exam'
     }
@@ -279,9 +279,7 @@ def add_pupil():
     ]
     if form.validate_on_submit():
         p = Pupil(
-            first_name=form.first_name.data,
-            middle_name=request.form.get('middle_name', '').strip() or None,
-            last_name=form.last_name.data,
+            first_name=form.first_name.data, last_name=form.last_name.data,
             admission_no=form.admission_no.data, gender=form.gender.data,
             date_of_birth=form.date_of_birth.data, class_id=form.class_id.data,
             stream_id=form.stream_id.data or None,
@@ -311,7 +309,6 @@ def edit_pupil(id):
     ]
     if form.validate_on_submit():
         p.first_name = form.first_name.data
-        p.middle_name = request.form.get('middle_name', '').strip() or None
         p.last_name = form.last_name.data
         p.admission_no = form.admission_no.data
         p.gender = form.gender.data
@@ -337,70 +334,6 @@ def delete_pupil(id):
     db.session.delete(p)
     db.session.commit()
     flash('Pupil deleted.', 'info')
-    return redirect(url_for('pupils'))
-
-
-# ===================== SHIFT / DROP / REACTIVATE =====================
-
-@app.route('/pupils/shift/<int:id>', methods=['GET', 'POST'])
-@teacher_required
-def shift_pupil(id):
-    p = Pupil.query.get_or_404(id)
-    if p.school_id != current_user.school_id:
-        abort(403)
-    sid = current_user.school_id
-
-    if request.method == 'POST':
-        new_class_id = request.form.get('new_class_id', type=int)
-        new_stream_id = request.form.get('new_stream_id', type=int) or None
-        reason = request.form.get('reason', '')
-
-        if not new_class_id:
-            flash('Please select a new class.', 'danger')
-            return redirect(url_for('shift_pupil', id=id))
-
-        log = PupilShift(
-            pupil_id=p.id,
-            from_class_id=p.class_id, to_class_id=new_class_id,
-            from_stream_id=p.stream_id, to_stream_id=new_stream_id,
-            reason=reason, shifted_by=current_user.id
-        )
-        db.session.add(log)
-
-        p.class_id = new_class_id
-        p.stream_id = new_stream_id
-        db.session.commit()
-        log_action('shift_pupil', f'{p.full_name} -> class {new_class_id}')
-        flash(f'{p.full_name} shifted successfully.', 'success')
-        return redirect(url_for('pupils'))
-
-    classes = Class.query.filter_by(school_id=sid).order_by(Class.id).all()
-    streams = Stream.query.filter_by(school_id=sid).all()
-    return render_template('pupils/shift.html', pupil=p, classes=classes, streams=streams)
-
-
-@app.route('/pupils/drop/<int:id>')
-@teacher_required
-def drop_pupil(id):
-    p = Pupil.query.get_or_404(id)
-    if p.school_id != current_user.school_id:
-        abort(403)
-    p.status = 'Dropped'
-    db.session.commit()
-    log_action('drop_pupil', p.full_name)
-    flash(f'{p.full_name} marked as Dropped.', 'info')
-    return redirect(url_for('pupils'))
-
-
-@app.route('/pupils/reactivate/<int:id>')
-@teacher_required
-def reactivate_pupil(id):
-    p = Pupil.query.get_or_404(id)
-    if p.school_id != current_user.school_id:
-        abort(403)
-    p.status = 'Active'
-    db.session.commit()
-    flash(f'{p.full_name} reactivated.', 'success')
     return redirect(url_for('pupils'))
 
 
@@ -453,32 +386,6 @@ def delete_class(id):
     db.session.commit()
     flash('Class deleted.', 'info')
     return redirect(url_for('classes'))
-
-
-@app.route('/classes/<int:id>/subjects', methods=['GET', 'POST'])
-@admin_required
-def class_subjects(id):
-    cls = Class.query.get_or_404(id)
-    if cls.school_id != current_user.school_id:
-        abort(403)
-    sid = current_user.school_id
-
-    if request.method == 'POST':
-        chosen_ids = [int(x) for x in request.form.getlist('subject_ids')]
-        Subject.query.filter_by(class_id=cls.id).update({'class_id': None})
-        db.session.commit()
-        for sub_id in chosen_ids:
-            sub = Subject.query.get(sub_id)
-            if sub and sub.school_id == sid:
-                sub.class_id = cls.id
-        db.session.commit()
-        flash(f'Subjects updated for {cls.name}.', 'success')
-        return redirect(url_for('class_subjects', id=cls.id))
-
-    all_subjects = Subject.query.filter_by(school_id=sid).order_by(Subject.name).all()
-    selected_ids = [s.id for s in Subject.query.filter_by(class_id=cls.id).all()]
-    return render_template('subjects/class_subjects.html',
-                           cls=cls, all_subjects=all_subjects, selected_ids=selected_ids)
 
 
 # ===================== STREAMS =====================
@@ -682,18 +589,13 @@ def gradebook():
                 q = q.filter_by(stream_id=stream_id)
             pupils_list = q.order_by(Pupil.first_name).all()
 
-            subjects_list = Subject.query.filter_by(class_id=class_id, school_id=sid).order_by(Subject.order_index, Subject.name).all()
-            if not subjects_list:
-                subject_names = CURRICULUM_SUBJECTS.get(selected_class.name, [])
-                for sname in subject_names:
-                    existing = Subject.query.filter_by(name=sname, school_id=sid).first()
-                    if existing:
-                        existing.class_id = class_id
-                    else:
-                        new_sub = Subject(name=sname, school_id=sid, class_id=class_id)
-                        db.session.add(new_sub)
-                db.session.commit()
-                subjects_list = Subject.query.filter_by(class_id=class_id, school_id=sid).order_by(Subject.order_index, Subject.name).all()
+            subject_names = CURRICULUM_SUBJECTS.get(selected_class.name, [])
+            for sname in subject_names:
+                if not Subject.query.filter_by(name=sname, school_id=sid).first():
+                    db.session.add(Subject(name=sname, school_id=sid))
+            db.session.commit()
+            subjects_list = Subject.query.filter(Subject.name.in_(subject_names),
+                                                 Subject.school_id == sid).all()
 
     if term_id:
         t = TermBoundary.query.get(term_id)
@@ -763,7 +665,6 @@ def gradebook_save():
                 r.grade = Result.calculate_grade(marks_float)
                 r.month_tag = exam_month
                 r.assessment_type = exam_type
-                r.term_name = term_name
             else:
                 r = Result(pupil_id=pupil_id, subject_id=subject.id,
                            examination_id=exam.id, marks=marks_float,
@@ -776,68 +677,6 @@ def gradebook_save():
 
     db.session.commit()
     flash(f'{saved} marks saved successfully!', 'success')
-    return redirect(request.referrer or url_for('gradebook'))
-
-
-@app.route('/gradebook/save-batch', methods=['POST'])
-@teacher_required
-def gradebook_save_batch():
-    sid = current_user.school_id
-    academic_year = request.form.get('academic_year', '2026')
-    term_name = request.form.get('term_name', '')
-    exam_month = request.form.get('exam_month', '')
-    exam_type = request.form.get('exam_type', '')
-    class_id = request.form.get('class_id', type=int)
-    stream_id = request.form.get('stream_id', type=int)
-
-    q = Pupil.query.filter_by(class_id=class_id, status='Active', school_id=sid)
-    if stream_id:
-        q = q.filter_by(stream_id=stream_id)
-    pupils_list = q.all()
-
-    exam_label = f"{exam_type} - {academic_year}"
-    exam = Examination.query.filter_by(name=exam_label, term=term_name,
-                                       year=int(academic_year), school_id=sid).first()
-    if not exam:
-        exam = Examination(name=exam_label, term=term_name,
-                           year=int(academic_year), month_tag=exam_month,
-                           school_id=sid)
-        db.session.add(exam)
-        db.session.commit()
-
-    saved = 0
-    for p in pupils_list:
-        for key, value in request.form.items():
-            prefix = f'marks_{p.id}_'
-            if key.startswith(prefix) and value.strip():
-                subject_id = int(key[len(prefix):])
-                try:
-                    marks_float = float(value)
-                    if marks_float < 0 or marks_float > 100:
-                        continue
-                except ValueError:
-                    continue
-
-                r = Result.query.filter_by(pupil_id=p.id, subject_id=subject_id,
-                                            examination_id=exam.id).first()
-                if r:
-                    r.marks = marks_float
-                    r.grade = Result.calculate_grade(marks_float)
-                    r.month_tag = exam_month
-                    r.assessment_type = exam_type
-                    r.term_name = term_name
-                else:
-                    r = Result(pupil_id=p.id, subject_id=subject_id,
-                               examination_id=exam.id, marks=marks_float,
-                               grade=Result.calculate_grade(marks_float),
-                               month_tag=exam_month, assessment_type=exam_type,
-                               academic_year=academic_year, term_name=term_name,
-                               school_id=sid)
-                    db.session.add(r)
-                saved += 1
-
-    db.session.commit()
-    flash(f'{saved} marks saved for {len(pupils_list)} pupil(s).', 'success')
     return redirect(request.referrer or url_for('gradebook'))
 
 
@@ -854,7 +693,6 @@ def results_edit():
     academic_year = request.args.get('academic_year', '2026')
     term_id = request.args.get('term_id', type=int)
     exam_type = request.args.get('exam_type', '')
-    exam_month = request.args.get('exam_month', '')
     class_id = request.args.get('class_id', type=int)
     stream_id = request.args.get('stream_id', type=int)
     pupil_id = request.args.get('pupil_id', type=int)
@@ -887,30 +725,22 @@ def results_edit():
                 results = Result.query.filter_by(pupil_id=pupil_id, examination_id=exam.id).all()
                 for r in results:
                     existing_marks[r.subject.name] = r.marks
-            else:
-                results = Result.query.filter_by(pupil_id=pupil_id, school_id=sid,
-                                                  term_name=term_name,
-                                                  assessment_type=exam_type,
-                                                  academic_year=academic_year).all()
-                for r in results:
-                    existing_marks[r.subject.name] = r.marks
 
     if request.method == 'POST':
         pupil_id_form = request.form.get('pupil_id', type=int)
         academic_year = request.form.get('academic_year', '2026')
         term_name = request.form.get('term_name', '')
         exam_type = request.form.get('exam_type', '')
-        exam_month = request.form.get('exam_month', '')
 
         exam_label = f"{exam_type} - {academic_year}"
         exam = Examination.query.filter_by(name=exam_label, term=term_name,
                                            year=int(academic_year), school_id=sid).first()
         if not exam:
-            exam = Examination(name=exam_label, term=term_name,
-                               year=int(academic_year), month_tag=exam_month,
-                               school_id=sid)
-            db.session.add(exam)
-            db.session.commit()
+            flash('Examination not found.', 'danger')
+            return redirect(url_for('results_edit'))
+
+        Result.query.filter_by(pupil_id=pupil_id_form, examination_id=exam.id).delete()
+        db.session.commit()
 
         saved = 0
         for key, value in request.form.items():
@@ -920,42 +750,22 @@ def results_edit():
                     marks_float = float(value)
                 except ValueError:
                     continue
-
                 subject = Subject.query.filter_by(name=subject_name, school_id=sid).first()
                 if not subject:
                     subject = Subject(name=subject_name, school_id=sid)
                     db.session.add(subject)
                     db.session.commit()
-
-                r = Result.query.filter_by(pupil_id=pupil_id_form,
-                                           subject_id=subject.id,
-                                           examination_id=exam.id).first()
-                if r:
-                    r.marks = marks_float
-                    r.grade = Result.calculate_grade(marks_float)
-                    r.month_tag = exam_month or r.month_tag
-                    r.assessment_type = exam_type or r.assessment_type
-                    r.term_name = term_name or r.term_name
-                    r.academic_year = academic_year
-                else:
-                    r = Result(pupil_id=pupil_id_form,
-                               subject_id=subject.id,
-                               examination_id=exam.id,
-                               marks=marks_float,
-                               grade=Result.calculate_grade(marks_float),
-                               month_tag=exam_month,
-                               assessment_type=exam_type,
-                               academic_year=academic_year,
-                               term_name=term_name,
-                               school_id=sid)
-                    db.session.add(r)
+                r = Result(pupil_id=pupil_id_form, subject_id=subject.id,
+                           examination_id=exam.id, marks=marks_float,
+                           grade=Result.calculate_grade(marks_float),
+                           academic_year=academic_year, term_name=term_name,
+                           assessment_type=exam_type, school_id=sid)
+                db.session.add(r)
                 saved += 1
-
         db.session.commit()
-        flash(f'Updated {saved} marks successfully!', 'success')
-        return redirect(url_for('results_edit',
-                                academic_year=academic_year, term_id=term_id,
-                                exam_type=exam_type, exam_month=exam_month,
+        flash(f'Updated {saved} marks for {exam_label}.', 'success')
+        return redirect(url_for('results_edit', academic_year=academic_year,
+                                term_id=term_id, exam_type=exam_type,
                                 class_id=class_id, stream_id=stream_id,
                                 pupil_id=pupil_id_form))
 
@@ -966,7 +776,6 @@ def results_edit():
                            selected_pupil=selected_pupil,
                            academic_year=academic_year, term_id=term_id,
                            term_name=term_name, exam_type=exam_type,
-                           exam_month=exam_month,
                            class_id=class_id, stream_id=stream_id,
                            pupil_id=pupil_id)
 
@@ -1155,87 +964,54 @@ def report_card(pupil_id, exam_id):
     if exam.term and 'II' in exam.term.upper().replace(' ', ''):
         term_key = 'Term II'
 
-    term_months = list(ACADEMIC_SCHEDULE.get(term_key, {}).keys())
+    term_months_dict = ACADEMIC_SCHEDULE.get(term_key, {})
+    term_months = list(term_months_dict.keys())
 
-    all_results = Result.query.filter_by(pupil_id=pupil_id, school_id=sid).all()
-
-    results = []
-    for r in all_results:
-        if r.term_name and exam.term and r.term_name.strip().lower() == exam.term.strip().lower():
-            results.append(r)
-            continue
-        if r.month_tag and r.month_tag.strip().title() in term_months:
-            results.append(r)
-            continue
-
-    from collections import OrderedDict
-    column_map = OrderedDict()
-    for r in results:
-        month = (r.month_tag or '').strip().title()
-        etype = (r.assessment_type or '').strip() or '(Exam)'
-        if not month:
-            continue
-        key = f'{month}|{etype}'
-        if key not in column_map:
-            column_map[key] = {'month': month, 'exam_type': etype, 'key': key}
-
-    term_columns = []
-    for m in term_months:
-        for k, v in column_map.items():
-            if v['month'] == m:
-                term_columns.append(v)
+    results = Result.query.filter_by(pupil_id=pupil_id, examination_id=exam_id).all()
 
     subjects_map = {}
     for r in results:
-        sname = r.subject.name
+        subject_name = r.subject.name
         month = (r.month_tag or '').strip().title()
-        etype = (r.assessment_type or '').strip() or '(Exam)'
-        key = f'{month}|{etype}'
-        subjects_map.setdefault(sname, {'scores': {}, 'all_marks': []})
+        if subject_name not in subjects_map:
+            subjects_map[subject_name] = {'months': {}, 'all_marks': []}
         if month:
-            subjects_map[sname]['scores'][key] = r.marks
-        subjects_map[sname]['all_marks'].append(r.marks)
+            subjects_map[subject_name]['months'][month] = r.marks
+        subjects_map[subject_name]['all_marks'].append(r.marks)
 
     subject_data = []
-    grand_avg = 0
-    grand_total = 0
+    grand_total_of_averages = 0
+    total_of_totals = 0
     subjects_counted = 0
 
-    for sname, data in sorted(subjects_map.items()):
+    for subject_name, data in sorted(subjects_map.items()):
         marks = [m for m in data['all_marks'] if m is not None]
         if not marks:
             continue
-        total = sum(marks)
-        avg = round(total / len(marks), 1)
-        grading = tanzanian_grade(avg)
+        subject_total = sum(marks)
+        subject_avg = round(subject_total / len(marks), 1)
+        grading = tanzanian_grade(subject_avg)
 
         subject_data.append({
-            'subject': sname,
-            'scores': data['scores'],
-            'total': round(total, 1),
-            'average': avg,
+            'subject': subject_name,
+            'monthly_scores': data['months'],
+            'total': round(subject_total, 1),
+            'average': subject_avg,
             'grade': grading['grade'],
             'remarks': grading['remarks'],
         })
-        grand_avg += avg
-        grand_total += total
+        grand_total_of_averages += subject_avg
+        total_of_totals += subject_total
         subjects_counted += 1
 
-    overall_avg = round(grand_avg / subjects_counted, 1) if subjects_counted else 0
+    overall_avg = round(grand_total_of_averages / subjects_counted, 1) if subjects_counted else 0
     overall_grading = tanzanian_grade(overall_avg)
 
     class_pupils = Pupil.query.filter_by(class_id=pupil.class_id, school_id=sid).all()
     rankings = []
     for cp in class_pupils:
-        cp_res = Result.query.filter_by(pupil_id=cp.id, school_id=sid).all()
-        cp_total = 0
-        for r in cp_res:
-            if r.term_name and exam.term and r.term_name.strip().lower() == exam.term.strip().lower():
-                if r.marks:
-                    cp_total += r.marks
-            elif r.month_tag and r.month_tag.strip().title() in term_months:
-                if r.marks:
-                    cp_total += r.marks
+        cp_res = Result.query.filter_by(pupil_id=cp.id, examination_id=exam_id).all()
+        cp_total = sum(r.marks for r in cp_res if r.marks)
         rankings.append((cp.id, cp_total))
     rankings.sort(key=lambda x: x[1], reverse=True)
     rank = next((i + 1 for i, (pid, _) in enumerate(rankings) if pid == pupil_id), None)
@@ -1243,8 +1019,8 @@ def report_card(pupil_id, exam_id):
     return render_template('reports/card_v2.html',
                            pupil=pupil, exam=exam,
                            subject_data=subject_data,
-                           term_columns=term_columns,
-                           overall_total=round(grand_total, 1),
+                           term_months=term_months,
+                           overall_total=round(total_of_totals, 1),
                            overall_avg=overall_avg,
                            overall_grade=overall_grading['grade'],
                            overall_remarks=overall_grading['remarks'],
@@ -1278,14 +1054,23 @@ def generate_report_query():
 @teacher_required
 def reports():
     sid = current_user.school_id
+
     current = datetime.utcnow().year
     years = [str(current), str(current + 1), str(current + 2)]
+
     classes = Class.query.filter_by(school_id=sid).order_by(Class.id).all()
     streams = Stream.query.filter_by(school_id=sid).order_by(Stream.name).all()
-    streams_json = [{'id': s.id, 'name': s.name, 'class_id': s.class_id} for s in streams]
+
+    streams_json = [
+        {'id': s.id, 'name': s.name, 'class_id': s.class_id}
+        for s in streams
+    ]
+
     return render_template('reports/select.html',
-                           years=years, classes=classes,
-                           streams=streams, streams_json=streams_json)
+                           years=years,
+                           classes=classes,
+                           streams=streams,
+                           streams_json=streams_json)
 
 
 @app.route('/reports/pupils')
@@ -1337,20 +1122,31 @@ def report_pupils():
 @app.route('/marklist')
 @teacher_required
 def marklist_select():
+    """Marklist selector page (Year -> Term -> Class -> Stream)."""
     sid = current_user.school_id
     current = datetime.utcnow().year
     years = [str(current), str(current + 1), str(current + 2)]
+
     classes = Class.query.filter_by(school_id=sid).order_by(Class.id).all()
     streams = Stream.query.filter_by(school_id=sid).order_by(Stream.name).all()
-    streams_json = [{'id': s.id, 'name': s.name, 'class_id': s.class_id} for s in streams]
+
+    streams_json = [
+        {'id': s.id, 'name': s.name, 'class_id': s.class_id}
+        for s in streams
+    ]
+
     return render_template('results/marklist_select.html',
-                           years=years, classes=classes, streams_json=streams_json)
+                           years=years,
+                           classes=classes,
+                           streams_json=streams_json)
 
 
 @app.route('/marklist/generate')
 @teacher_required
 def marklist_generate():
+    """Generate the two-page marklist."""
     sid = current_user.school_id
+
     class_id = request.args.get('class_id', type=int)
     stream_id = request.args.get('stream_id', type=int)
     academic_year = request.args.get('academic_year', '')
@@ -1373,24 +1169,30 @@ def marklist_generate():
         except ValueError:
             year_int = None
         if year_int:
-            exam = Examination.query.filter_by(school_id=sid, term=term, year=year_int).order_by(Examination.id.desc()).first()
+            exam = Examination.query.filter_by(
+                school_id=sid, term=term, year=year_int
+            ).order_by(Examination.id.desc()).first()
             if not exam:
-                exam = Examination.query.filter_by(school_id=sid, year=year_int).order_by(Examination.id.desc()).first()
+                exam = Examination.query.filter_by(
+                    school_id=sid, year=year_int
+                ).order_by(Examination.id.desc()).first()
 
     if not exam:
+        flash('No examination found for the selected year and term.', 'warning')
         return render_template('results/marklist.html',
                                school=School.query.get(sid),
                                selected_class=selected_class,
                                selected_stream=selected_stream,
                                exam=None,
-                               pupils_data=[], subject_columns=[], subject_analysis=[])
+                               pupils_data=[],
+                               subject_columns=[],
+                               subject_analysis=[])
 
-    term_months = list(ACADEMIC_SCHEDULE.get('Term I' if 'II' not in (exam.term or '').upper() else 'Term II', {}).keys())
-
-    subject_columns = Subject.query.filter_by(class_id=class_id, school_id=sid).order_by(Subject.order_index, Subject.name).all()
-    if not subject_columns:
-        subject_names = CURRICULUM_SUBJECTS.get(selected_class.name, [])
-        subject_columns = Subject.query.filter(Subject.school_id == sid, Subject.name.in_(subject_names)).order_by(Subject.name).all()
+    subject_names = CURRICULUM_SUBJECTS.get(selected_class.name, [])
+    subject_columns = Subject.query.filter(
+        Subject.school_id == sid,
+        Subject.name.in_(subject_names)
+    ).order_by(Subject.name).all()
 
     q = Pupil.query.filter_by(class_id=class_id, school_id=sid, status='Active')
     if stream_id:
@@ -1398,14 +1200,17 @@ def marklist_generate():
     pupils_list = q.order_by(Pupil.first_name).all()
 
     pupil_ids = [p.id for p in pupils_list]
-    all_results = Result.query.filter(Result.pupil_id.in_(pupil_ids)).all() if pupil_ids else []
+    if pupil_ids:
+        results = Result.query.filter(
+            Result.examination_id == exam.id,
+            Result.pupil_id.in_(pupil_ids)
+        ).all()
+    else:
+        results = []
 
     marks_by_pupil = {}
-    for r in all_results:
-        if r.term_name and exam.term and r.term_name.strip().lower() == exam.term.strip().lower():
-            marks_by_pupil.setdefault(r.pupil_id, {})[r.subject_id] = r.marks
-        elif r.month_tag and r.month_tag.strip().title() in term_months:
-            marks_by_pupil.setdefault(r.pupil_id, {})[r.subject_id] = r.marks
+    for r in results:
+        marks_by_pupil.setdefault(r.pupil_id, {})[r.subject_id] = r.marks
 
     pupils_data = []
     for p in pupils_list:
@@ -1420,10 +1225,14 @@ def marklist_generate():
                 total += mk
                 count += 1
         avg = round(total / count, 1) if count else 0
-        grading = tanzanian_grade(avg)
+        overall_grading = tanzanian_grade(avg)
         pupils_data.append({
-            'pupil': p, 'marks': marks_dict, 'grades': grades_dict,
-            'total': round(total, 1), 'average': avg, 'grade': grading['grade'],
+            'pupil': p,
+            'marks': marks_dict,
+            'grades': grades_dict,
+            'total': round(total, 1),
+            'average': avg,
+            'grade': overall_grading['grade'],
         })
 
     pupils_data.sort(key=lambda x: x['average'], reverse=True)
@@ -1436,6 +1245,7 @@ def marklist_generate():
         a_count = b_count = c_count = d_count = f_count = 0
         total_marks = 0
         count = 0
+
         for p in pupils_list:
             mk = marks_by_pupil.get(p.id, {}).get(subj.id)
             if mk is None:
@@ -1447,15 +1257,24 @@ def marklist_generate():
             elif mk >= 41: c_count += 1
             elif mk >= 21: d_count += 1
             else: f_count += 1
+
         avg = round(total_marks / count, 2) if count else 0
         grading = tanzanian_grade(avg)
+
         subject_analysis.append({
             'name': subj.name,
-            'a_count': a_count, 'b_count': b_count, 'c_count': c_count,
-            'd_count': d_count, 'f_count': f_count,
-            'average': avg, 'grade': grading['grade'], 'position': 0,
-            'status': grading['remarks'], 'registered': registered,
-            'attended': count, 'absent': registered - count,
+            'a_count': a_count,
+            'b_count': b_count,
+            'c_count': c_count,
+            'd_count': d_count,
+            'f_count': f_count,
+            'average': avg,
+            'grade': grading['grade'],
+            'position': 0,
+            'status': grading['remarks'],
+            'registered': registered,
+            'attended': count,
+            'absent': registered - count,
         })
 
     subject_analysis_sorted = sorted(subject_analysis, key=lambda x: x['average'], reverse=True)
@@ -1547,9 +1366,171 @@ with app.app_context():
         print('DB init skipped:', e)
 
 
+
+# ===================== SHIFT / DROP / REACTIVATE PUPILS =====================
+
+@app.route('/pupils/shift/<int:id>', methods=['GET', 'POST'])
+@teacher_required
+def shift_pupil(id):
+    p = Pupil.query.get_or_404(id)
+    if p.school_id != current_user.school_id:
+        abort(403)
+    sid = current_user.school_id
+
+    if request.method == 'POST':
+        new_class_id = request.form.get('new_class_id', type=int)
+        new_stream_id = request.form.get('new_stream_id', type=int) or None
+        reason = request.form.get('reason', '')
+
+        if not new_class_id:
+            flash('Please select a new class.', 'danger')
+            return redirect(url_for('shift_pupil', id=id))
+
+        log = PupilShift(
+            pupil_id=p.id,
+            from_class_id=p.class_id, to_class_id=new_class_id,
+            from_stream_id=p.stream_id, to_stream_id=new_stream_id,
+            reason=reason, shifted_by=current_user.id
+        )
+        db.session.add(log)
+
+        p.class_id = new_class_id
+        p.stream_id = new_stream_id
+        db.session.commit()
+        log_action('shift_pupil', f'{p.full_name} -> class {new_class_id}')
+
+        flash(f'{p.full_name} shifted successfully.', 'success')
+        return redirect(url_for('pupils'))
+
+    classes = Class.query.filter_by(school_id=sid).order_by(Class.id).all()
+    streams = Stream.query.filter_by(school_id=sid).all()
+    return render_template('pupils/shift.html', pupil=p, classes=classes, streams=streams)
+
+
+@app.route('/pupils/drop/<int:id>')
+@teacher_required
+def drop_pupil(id):
+    p = Pupil.query.get_or_404(id)
+    if p.school_id != current_user.school_id:
+        abort(403)
+    p.status = 'Dropped'
+    db.session.commit()
+    log_action('drop_pupil', p.full_name)
+    flash(f'{p.full_name} marked as Dropped.', 'info')
+    return redirect(url_for('pupils'))
+
+
+@app.route('/pupils/reactivate/<int:id>')
+@teacher_required
+def reactivate_pupil(id):
+    p = Pupil.query.get_or_404(id)
+    if p.school_id != current_user.school_id:
+        abort(403)
+    p.status = 'Active'
+    db.session.commit()
+    flash(f'{p.full_name} reactivated.', 'success')
+    return redirect(url_for('pupils'))
+
+
+# ===================== SUBJECTS PER CLASS =====================
+
+@app.route('/classes/<int:id>/subjects', methods=['GET', 'POST'])
+@admin_required
+def class_subjects(id):
+    cls = Class.query.get_or_404(id)
+    if cls.school_id != current_user.school_id:
+        abort(403)
+    sid = current_user.school_id
+
+    if request.method == 'POST':
+        chosen_ids = request.form.getlist('subject_ids')
+        chosen_ids = [int(x) for x in chosen_ids]
+
+        Subject.query.filter_by(class_id=cls.id).update({'class_id': None})
+
+        for sub_id in chosen_ids:
+            sub = Subject.query.get(sub_id)
+            if sub and sub.school_id == sid:
+                sub.class_id = cls.id
+        db.session.commit()
+        flash(f'Subjects updated for {cls.name}.', 'success')
+        return redirect(url_for('class_subjects', id=cls.id))
+
+    all_subjects = Subject.query.filter_by(school_id=sid).order_by(Subject.name).all()
+    selected_ids = [s.id for s in Subject.query.filter_by(class_id=cls.id).all()]
+    return render_template('subjects/class_subjects.html',
+                           cls=cls, all_subjects=all_subjects, selected_ids=selected_ids)
+
+
+# ===================== GRADEBOOK BATCH SAVE =====================
+
+@app.route('/gradebook/save-batch', methods=['POST'])
+@teacher_required
+def gradebook_save_batch():
+    sid = current_user.school_id
+    academic_year = request.form.get('academic_year', '2026')
+    term_name = request.form.get('term_name', '')
+    exam_month = request.form.get('exam_month', '')
+    exam_type = request.form.get('exam_type', '')
+    class_id = request.form.get('class_id', type=int)
+    stream_id = request.form.get('stream_id', type=int)
+
+    q = Pupil.query.filter_by(class_id=class_id, status='Active', school_id=sid)
+    if stream_id:
+        q = q.filter_by(stream_id=stream_id)
+    pupils_list = q.all()
+
+    exam_label = f"{exam_type} - {academic_year}"
+    exam = Examination.query.filter_by(name=exam_label, term=term_name,
+                                       year=int(academic_year), school_id=sid).first()
+    if not exam:
+        exam = Examination(name=exam_label, term=term_name,
+                           year=int(academic_year), month_tag=exam_month,
+                           school_id=sid)
+        db.session.add(exam)
+        db.session.commit()
+
+    saved = 0
+    for p in pupils_list:
+        for key, value in request.form.items():
+            prefix = f'marks_{p.id}_'
+            if key.startswith(prefix) and value.strip():
+                subject_id = int(key[len(prefix):])
+                try:
+                    marks_float = float(value)
+                    if marks_float < 0 or marks_float > 100:
+                        continue
+                except ValueError:
+                    continue
+
+                r = Result.query.filter_by(pupil_id=p.id, subject_id=subject_id,
+                                            examination_id=exam.id).first()
+                if r:
+                    r.marks = marks_float
+                    r.grade = Result.calculate_grade(marks_float)
+                    r.month_tag = exam_month
+                    r.assessment_type = exam_type
+                else:
+                    r = Result(pupil_id=p.id, subject_id=subject_id,
+                               examination_id=exam.id, marks=marks_float,
+                               grade=Result.calculate_grade(marks_float),
+                               month_tag=exam_month, assessment_type=exam_type,
+                               academic_year=academic_year, term_name=term_name,
+                               school_id=sid)
+                    db.session.add(r)
+                saved += 1
+
+    db.session.commit()
+    flash(f'{saved} marks saved for {len(pupils_list)} pupil(s).', 'success')
+    return redirect(request.referrer or url_for('gradebook'))
+
+
+# ===================== END OF NEW ROUTES =====================
+
+
 if __name__ == '__main__':
     print("=" * 50)
-    print(" School Management System - Starting")
+    print(" School Management System — Starting")
     print(" Open: http://localhost:5000/login")
     print("=" * 50)
     app.run(debug=True, host='0.0.0.0', port=5000)
