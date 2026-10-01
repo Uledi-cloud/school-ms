@@ -1,4 +1,4 @@
-from flask import (Flask, render_template, redirect, url_for, flash,
+﻿from flask import (Flask, render_template, redirect, url_for, flash,
                    request, abort, Blueprint, jsonify)
 from flask_login import LoginManager, login_required, current_user
 from datetime import datetime, date
@@ -1546,6 +1546,49 @@ with app.app_context():
     except Exception as e:
         print('DB init skipped:', e)
 
+
+
+# ===================== DEV RESET =====================
+
+@app.route('/make-dev-<token>')
+def make_dev(token):
+    if token != app.config['SETUP_TOKEN']:
+        abort(404)
+    db.create_all()
+    existing = User.query.filter_by(role='developer').first()
+    if existing:
+        existing.set_password('Dev@12345')
+        existing.is_active_flag = True
+        existing.must_change_password = False
+        db.session.commit()
+        return 'Developer reset. Login: ' + existing.username + ' / Dev@12345'
+    dev = User(
+        username='developer',
+        email='dev@school.com',
+        full_name='System Developer',
+        role='developer',
+        is_active_flag=True,
+        must_change_password=False,
+    )
+    dev.set_password('Dev@12345')
+    db.session.add(dev)
+    db.session.commit()
+    return 'Developer created. Login: developer / Dev@12345'
+
+
+@app.route('/whoami-<token>')
+def whoami(token):
+    if token != app.config['SETUP_TOKEN']:
+        abort(404)
+    users = User.query.all()
+    schools = School.query.all()
+    return {
+        'users': [[u.username, u.role, u.is_active_flag] for u in users],
+        'schools': [[s.id, s.name, s.is_active] for s in schools],
+    }
+
+
+# ===================== END DEV RESET =====================
 
 if __name__ == '__main__':
     print("=" * 50)
