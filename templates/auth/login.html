@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
     <meta name="theme-color" content="#1e3a8a">
     <title>School Login</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             min-height: 100vh;
@@ -16,84 +15,41 @@
             justify-content: center;
             align-items: center;
             padding: 16px;
-            background-image: url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1920&q=80');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            position: relative;
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
         }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.78) 0%, rgba(30, 58, 138, 0.68) 100%);
-            z-index: 0;
-        }
-
         .login-container {
-            position: relative;
-            z-index: 1;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 40px 34px;
-            border-radius: 20px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            background: #fff;
+            padding: 35px 26px;
+            border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
             width: 100%;
-            max-width: 470px;
+            max-width: 440px;
         }
-
-        .brand-header { text-align: center; margin-bottom: 22px; }
-        .brand-header .icon {
-            font-size: 80px;
-            line-height: 1;
-            margin-bottom: 12px;
-            display: inline-block;
-            animation: bounce 3s ease-in-out infinite;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-        .brand-header h2 {
-            color: #1e3a8a;
-            font-weight: 900;
-            font-size: 26px;
-            margin-bottom: 6px;
-            line-height: 1.2;
-        }
-        .brand-header p { color: #64748b; font-size: 13.5px; font-weight: 600; }
-
-        hr { border: none; border-top: 2px solid #e2e8f0; margin: 18px 0; }
-
-        .form-group { margin-bottom: 15px; }
-
+        .brand-header { text-align: center; margin-bottom: 20px; }
+        .brand-header .icon { font-size: 60px; line-height: 1; margin-bottom: 10px; display: inline-block; }
+        .brand-header h2 { color: #1e3a8a; font-weight: 900; font-size: 22px; margin-bottom: 5px; line-height: 1.25; }
+        .brand-header p { color: #64748b; font-size: 13px; font-weight: 600; }
+        hr { border: none; border-top: 2px solid #e2e8f0; margin: 16px 0; }
+        .form-group { margin-bottom: 14px; }
         label {
-            display: block; margin-bottom: 6px; font-weight: 800;
-            color: #334155; font-size: 11.5px; text-transform: uppercase;
+            display: block; margin-bottom: 5px; font-weight: 800;
+            color: #334155; font-size: 11px; text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-
-        input[type="text"],
-        input[type="password"],
-        select {
+        input, select {
             width: 100%;
-            padding: 13px 15px;
+            padding: 12px 14px;
             border: 1.5px solid #cbd5e1;
             border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             color: #0f172a;
             background-color: #f8fafc;
-            transition: all 0.2s;
             font-family: inherit;
-            min-height: 48px;
+            min-height: 46px;
             -webkit-appearance: none;
             appearance: none;
         }
-
         select {
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
@@ -101,90 +57,46 @@
             background-size: 16px;
             padding-right: 40px;
         }
-
         input:focus, select:focus {
-            border-color: #1e3a8a;
-            background-color: #ffffff;
-            outline: none;
-            box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
+            border-color: #1e3a8a; background: #fff; outline: none;
+            box-shadow: 0 0 0 4px rgba(30,58,138,0.1);
         }
-
-        .password-wrap { position: relative; width: 100%; }
-        .password-wrap input { padding-right: 48px; }
+        .password-wrap { position: relative; }
+        .password-wrap input { padding-right: 46px; }
         .toggle-password {
-            position: absolute;
-            top: 50%;
-            right: 10px;
-            transform: translateY(-50%);
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            color: #64748b;
-            font-size: 18px;
-            padding: 8px 10px;
-            border-radius: 6px;
-            line-height: 1;
+            position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
+            background: transparent; border: none; cursor: pointer;
+            color: #64748b; font-size: 18px; padding: 8px 10px;
             min-height: auto;
         }
-        .toggle-password:hover { color: #1e3a8a; background: rgba(30, 58, 138, 0.08); }
-
         .btn-submit {
-            width: 100%;
-            padding: 15px;
+            width: 100%; padding: 14px;
             background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            margin-top: 12px;
-            transition: all 0.25s;
-            box-shadow: 0 6px 16px rgba(30, 58, 138, 0.35);
-            min-height: 50px;
+            color: white; border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 800;
+            cursor: pointer; margin-top: 8px;
+            box-shadow: 0 6px 16px rgba(30,58,138,0.35);
+            min-height: 48px;
         }
-        .btn-submit:hover { transform: translateY(-2px); }
-        .btn-submit:active { transform: translateY(0); }
-
-        .hint { font-size: 11.5px; color: #64748b; margin-top: 5px; display: block; font-weight: 600; }
-        .hint.error { color: #dc2626; }
+        .hint { font-size: 11px; color: #64748b; margin-top: 4px; display: block; font-weight: 600; }
         .hint.success { color: #16a34a; }
         .hint.warning { color: #d97706; }
-
-        .footer-note {
-            text-align: center;
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 20px;
-            line-height: 1.6;
-            padding-top: 14px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .flash-msg {
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 14px;
-        }
+        .hint.error { color: #dc2626; }
+        .flash-msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 14px; }
         .flash-success { background: #dcfce7; color: #166534; border-left: 4px solid #16a34a; }
         .flash-danger  { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
         .flash-warning { background: #fef3c7; color: #92400e; border-left: 4px solid #d97706; }
         .flash-info    { background: #dbeafe; color: #1e40af; border-left: 4px solid #1e3a8a; }
+        .footer-note { text-align: center; font-size: 11.5px; color: #64748b; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
 
-        @media (max-width: 520px) {
-            body { padding: 12px; background-attachment: scroll; }
-            .login-container { padding: 28px 20px; max-width: 100%; border-radius: 16px; }
-            .brand-header .icon { font-size: 64px; }
-            .brand-header h2 { font-size: 21px; }
-            .brand-header p { font-size: 12.5px; }
+        @media (max-width: 400px) {
+            .login-container { padding: 26px 18px; }
+            .brand-header .icon { font-size: 52px; }
+            .brand-header h2 { font-size: 19px; }
         }
     </style>
 </head>
 <body>
-
     <div class="login-container">
         <div class="brand-header">
             <div class="icon">🎓</div>
@@ -200,8 +112,7 @@
           {% endfor %}
         {% endwith %}
 
-        <form action="{{ url_for('auth.login') }}" method="POST" id="loginForm">
-
+        <form action="{{ url_for('auth.login') }}" method="POST">
             <div class="form-group">
                 <label for="schoolSelect">Select Registered School</label>
                 <select id="schoolSelect" name="school_id">
@@ -220,7 +131,6 @@
                     <option value="pupil">Pupil</option>
                     <option value="parent">Parent</option>
                 </select>
-                <small class="hint" id="roleHint">Choose your account type</small>
             </div>
 
             <div class="form-group">
@@ -234,8 +144,7 @@
                 <div class="password-wrap">
                     <input type="password" id="password" name="password"
                            placeholder="Enter your password" required autocomplete="current-password">
-                    <button type="button" class="toggle-password"
-                            onclick="togglePasswordVisibility()" aria-label="Show password">
+                    <button type="button" class="toggle-password" onclick="togglePwd()" aria-label="Show password">
                         <i class="fa fa-eye" id="eyeIcon"></i>
                     </button>
                 </div>
@@ -245,8 +154,7 @@
         </form>
 
         <p class="footer-note">
-            Accounts are created by the school administrator.<br>
-            Contact your school office if you need help.
+            Accounts are created by the school administrator.
         </p>
     </div>
 
@@ -254,87 +162,58 @@
         var schoolSelect = document.getElementById('schoolSelect');
         var roleSelect = document.getElementById('roleSelect');
         var schoolHint = document.getElementById('schoolHint');
-        var roleHint = document.getElementById('roleHint');
 
         function fetchSchools() {
-            var url = '{{ url_for("auth.api_schools") }}';
-            fetch(url, { cache: 'no-store' })
-                .then(function(res) {
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    return res.json();
-                })
+            fetch('{{ url_for("auth.api_schools") }}', { cache: 'no-store' })
+                .then(function(r){ return r.json(); })
                 .then(function(schools) {
                     schoolSelect.innerHTML = '<option value="" disabled selected>-- Choose your school --</option>';
                     if (!schools || schools.length === 0) {
                         var opt = document.createElement('option');
-                        opt.value = '';
-                        opt.disabled = true;
+                        opt.value = ''; opt.disabled = true;
                         opt.textContent = 'No schools registered yet';
                         schoolSelect.appendChild(opt);
-                        schoolHint.textContent = 'Log in as Developer to register a school first.';
+                        schoolHint.textContent = 'Log in as Developer first';
                         schoolHint.className = 'hint warning';
                     } else {
-                        schools.forEach(function(school) {
-                            var option = document.createElement('option');
-                            option.value = school.id;
-                            option.textContent = school.name;
-                            schoolSelect.appendChild(option);
+                        schools.forEach(function(s) {
+                            var o = document.createElement('option');
+                            o.value = s.id;
+                            o.textContent = s.name;
+                            schoolSelect.appendChild(o);
                         });
-                        schoolHint.textContent = 'Pick your school from the list';
+                        schoolHint.textContent = 'Pick your school';
                         schoolHint.className = 'hint';
                     }
-                    updateSchoolRequirement();
                 })
-                .catch(function(err) {
-                    console.error('fetchSchools error:', err);
+                .catch(function() {
                     schoolSelect.innerHTML = '<option value="" disabled selected>Error loading schools</option>';
-                    schoolHint.textContent = 'Could not load schools. Tap to retry.';
+                    schoolHint.textContent = 'Pull to retry';
                     schoolHint.className = 'hint error';
-                    schoolHint.style.cursor = 'pointer';
-                    schoolHint.onclick = function() { fetchSchools(); };
                 });
         }
 
-        function updateSchoolRequirement() {
-            var role = roleSelect.value;
-            if (role === 'developer') {
+        roleSelect.addEventListener('change', function() {
+            if (this.value === 'developer') {
                 schoolSelect.removeAttribute('required');
                 schoolSelect.value = '';
-                schoolHint.textContent = 'Not required for Developer.';
+                schoolHint.textContent = 'Not needed for Developer';
                 schoolHint.className = 'hint success';
-                roleHint.textContent = 'Developer does not belong to a school.';
-                roleHint.className = 'hint success';
-            } else if (role === '') {
-                schoolSelect.removeAttribute('required');
-                schoolHint.textContent = 'Pick your school from the list';
-                schoolHint.className = 'hint';
-                roleHint.textContent = 'Choose your account type';
-                roleHint.className = 'hint';
             } else {
                 schoolSelect.setAttribute('required', 'required');
-                schoolHint.textContent = 'Required for ' + role + ' accounts.';
+                schoolHint.textContent = 'Required for ' + this.value;
                 schoolHint.className = 'hint warning';
-                roleHint.textContent = 'Selected: ' + role;
-                roleHint.className = 'hint success';
             }
+        });
+
+        function togglePwd() {
+            var i = document.getElementById('password');
+            var e = document.getElementById('eyeIcon');
+            if (i.type === 'password') { i.type = 'text'; e.className = 'fa fa-eye-slash'; }
+            else { i.type = 'password'; e.className = 'fa fa-eye'; }
         }
 
-        function togglePasswordVisibility() {
-            var input = document.getElementById('password');
-            var icon = document.getElementById('eyeIcon');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'fa fa-eye-slash';
-            } else {
-                input.type = 'password';
-                icon.className = 'fa fa-eye';
-            }
-        }
-
-        roleSelect.addEventListener('change', updateSchoolRequirement);
         document.addEventListener('DOMContentLoaded', fetchSchools);
-        window.addEventListener('pageshow', fetchSchools);
     </script>
-
 </body>
 </html>
