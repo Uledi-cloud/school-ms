@@ -1590,6 +1590,102 @@ def whoami(token):
 
 # ===================== END DEV RESET =====================
 
+
+
+# ===================== FORCE RESET DEVELOPER =====================
+
+@app.route('/forcereset-<token>')
+def forcereset(token):
+    if token != app.config['SETUP_TOKEN']:
+        abort(404)
+
+    db.create_all()
+
+    # Show current state
+    all_users = User.query.all()
+    existing = User.query.filter_by(role='developer').first()
+
+    output = []
+    output.append("=== BEFORE ===")
+    output.append(f"Total users in DB: {len(all_users)}")
+    for u in all_users:
+        output.append(f"  - username={u.username}, role={u.role}, active={u.is_active_flag}")
+
+    if existing:
+        # Force reset every field
+        existing.set_password('Dev@12345')
+        existing.is_active_flag = True
+        existing.must_change_password = False
+        db.session.commit()
+        output.append("")
+        output.append(f"=== RESET ===")
+        output.append(f"Developer account reset:")
+        output.append(f"  username: {existing.username}")
+        output.append(f"  password: Dev@12345")
+        output.append(f"  active: {existing.is_active_flag}")
+        output.append(f"  must_change_password: {existing.must_change_password}")
+        output.append("")
+        output.append("Login now with:")
+        output.append("  Role: Developer")
+        output.append("  School: (leave blank)")
+        output.append(f"  Username: {existing.username}")
+        output.append("  Password: Dev@12345")
+    else:
+        # Create a new developer
+        dev = User(
+            username='developer',
+            email='dev@school.com',
+            full_name='System Developer',
+            role='developer',
+            is_active_flag=True,
+            must_change_password=False,
+        )
+        dev.set_password('Dev@12345')
+        db.session.add(dev)
+        db.session.commit()
+        output.append("")
+        output.append("=== CREATED ===")
+        output.append("Developer account created:")
+        output.append("  username: developer")
+        output.append("  password: Dev@12345")
+        output.append("")
+        output.append("Login now with:")
+        output.append("  Role: Developer")
+        output.append("  School: (leave blank)")
+        output.append("  Username: developer")
+        output.append("  Password: Dev@12345")
+
+    return "<pre>" + "\n".join(output) + "</pre>"
+
+
+@app.route('/listusers-<token>')
+def listusers(token):
+    if token != app.config['SETUP_TOKEN']:
+        abort(404)
+
+    db.create_all()
+    users = User.query.all()
+    schools = School.query.all()
+
+    lines = []
+    lines.append(f"Total users: {len(users)}")
+    lines.append("")
+    lines.append("USERS:")
+    for u in users:
+        lines.append(f"  ID={u.id} | username={u.username} | role={u.role} | active={u.is_active_flag} | school_id={u.school_id}")
+    lines.append("")
+    lines.append(f"Total schools: {len(schools)}")
+    lines.append("SCHOOLS:")
+    for s in schools:
+        lines.append(f"  ID={s.id} | name={s.name} | active={s.is_active}")
+    lines.append("")
+
+    return "<pre>" + "\n".join(lines) + "</pre>"
+
+
+# ===================== END FORCE RESET =====================
+
+
 if __name__ == '__main__':
     print("=" * 50)
     print(" School Management System - Starting")
