@@ -2,15 +2,11 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
     <meta name="theme-color" content="#1e3a8a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="School MS">
     <title>{% block page_title %}Dashboard{% endblock %} — {{ current_user.school.name if current_user.is_authenticated and current_user.school else 'School Management System' }}</title>
-    <link rel="manifest" href="/static/manifest.json">
-    <link rel="apple-touch-icon" href="/static/icon-192.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <style>
@@ -18,11 +14,7 @@
             --sidebar-w: 260px;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body {
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
+        html, body { margin: 0; padding: 0; overflow-x: hidden; max-width: 100%; }
         body {
             background: #f1f5f9;
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
@@ -30,7 +22,7 @@
             min-height: 100vh;
         }
 
-        /* ================= SIDEBAR ================= */
+        /* ============ SIDEBAR ============ */
         .sidebar {
             width: var(--sidebar-w);
             background: #0f172a;
@@ -75,18 +67,15 @@
         /* Mobile overlay */
         .sidebar-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.55);
             z-index: 1040;
             display: none;
             opacity: 0;
             transition: opacity 0.3s;
         }
-        .sidebar-overlay.show {
-            display: block;
-            opacity: 1;
-        }
+        .sidebar-overlay.show { display: block; opacity: 1; }
 
-        /* ================= MAIN ================= */
+        /* ============ MAIN WORKSPACE ============ */
         .main-workspace {
             margin-left: var(--sidebar-w);
             padding: 25px 35px;
@@ -108,12 +97,11 @@
             border-radius: 8px; display: flex; flex-direction: column;
             justify-content: center; align-items: center; gap: 5px;
             cursor: pointer; flex-shrink: 0;
-            transition: background 0.2s;
         }
         .hamburger-btn:hover { background: #1e3a8a; }
         .hamburger-line { width: 22px; height: 3px; background: #fff; border-radius: 2px; }
 
-        /* ================= CARDS ================= */
+        /* ============ CARDS ============ */
         .stat-card {
             background: #fff; border-radius: 12px; padding: 18px;
             display: flex; align-items: center; gap: 15px;
@@ -146,67 +134,71 @@
         }
         .quick-link-btn:hover { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
 
-        /* ================= TABLES ================= */
-        .table-responsive, table {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        table { font-size: 13px; }
+        /* ============ TABLES ============ */
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+        table { width: 100%; }
         table th, table td { padding: 10px 12px; vertical-align: middle; }
 
-        /* ================= FORMS ================= */
+        /* ============ FORMS ============ */
         input, select, textarea, .form-control, .form-select {
-            font-size: 16px !important;
+            font-size: 16px !important;   /* prevents iOS zoom */
             min-height: 44px;
         }
         button, .btn {
             min-height: 44px;
             font-size: 14px;
         }
-        button.btn-sm, .btn-sm {
-            min-height: 36px;
-            font-size: 12.5px;
-        }
 
-        /* ================= MOBILE ================= */
+        /* ============ MOBILE ============ */
         @media (max-width: 991px) {
             .sidebar { transform: translateX(-100%); }
             .sidebar.show { transform: translateX(0); }
-            .main-workspace { margin-left: 0; padding: 16px 14px; }
+            .main-workspace { margin-left: 0; padding: 14px 12px; }
             .top-bar {
                 position: sticky;
                 top: 0;
                 background: #f1f5f9;
                 z-index: 100;
                 padding: 8px 0 12px 0;
-                margin-bottom: 16px;
+                margin-bottom: 14px;
+                border-bottom: 1px solid #e2e8f0;
             }
-            .top-bar h2 { font-size: 18px; }
+            .top-bar h2 { font-size: 17px; }
             .card-modern { padding: 16px 14px; border-radius: 10px; }
             .stat-card { padding: 14px; min-height: 70px; }
             .stat-icon { width: 44px; height: 44px; font-size: 18px; }
             .stat-value { font-size: 17px; }
             .stat-label { font-size: 9.5px; }
             .quick-link-btn { font-size: 12.5px; padding: 12px; min-height: 48px; }
-            h1 { font-size: 22px; }
-            h2 { font-size: 18px; }
-            h3 { font-size: 16px; }
+            h1 { font-size: 20px; }
+            h2 { font-size: 17px; }
+            h3 { font-size: 15px; }
         }
 
         @media (max-width: 576px) {
-            .main-workspace { padding: 12px 10px; }
-            .card-modern { padding: 14px 12px; }
-            .stat-card { padding: 12px; }
-            table { font-size: 12.5px; }
-            table th, table td { padding: 8px 8px; }
-            .btn { font-size: 13px; padding: 8px 12px; min-height: 40px; }
+            .main-workspace { padding: 12px 8px; }
+            .card-modern { padding: 14px 10px; }
+            .stat-card { padding: 12px; gap: 10px; }
+            table { font-size: 12px !important; }
+            table th, table td { padding: 7px 6px !important; }
+            .btn { font-size: 12.5px; padding: 8px 10px; }
+        }
+
+        /* Make wide tables scrollable with visible hint */
+        .card-modern > .table-responsive::after {
+            content: '';
+            display: block;
+            height: 1px;
+        }
+
+        /* Bootstrap grid tweaks for very small screens */
+        @media (max-width: 400px) {
+            .col-md-6, .col-md-4, .col-md-3, .col-lg-4, .col-lg-3 { width: 100% !important; }
         }
     </style>
 </head>
 <body>
 
-<!-- Mobile overlay for sidebar -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 {% if current_user.is_authenticated %}
@@ -226,7 +218,6 @@
 
     <div class="sidebar-menu">
 
-        {# ================= DEVELOPER ================= #}
         {% if current_user.role == 'developer' %}
         <div class="menu-section">DEVELOPER</div>
         <a href="{{ url_for('auth.developer_schools') }}"
@@ -235,69 +226,56 @@
         </a>
         {% endif %}
 
-        {# ================= SCHOOL ================= #}
         {% if current_user.role in ('admin', 'teacher') %}
         <div class="menu-section">SCHOOL</div>
-
         <a href="{{ url_for('index') }}"
            class="menu-item {% if request.endpoint == 'index' %}active{% endif %}">
             <i class="fa fa-th-large"></i> Dashboard
         </a>
-
         {% if current_user.role == 'admin' %}
         <a href="{{ url_for('auth.admin_users') }}"
            class="menu-item {% if request.endpoint == 'auth.admin_users' %}active{% endif %}">
             <i class="fa fa-users"></i> Manage Users
         </a>
         {% endif %}
-
         <a href="{{ url_for('pupils') }}"
            class="menu-item {% if request.endpoint and 'pupil' in request.endpoint %}active{% endif %}">
             <i class="fa fa-child"></i> Pupils
         </a>
-
         <a href="{{ url_for('classes') }}"
            class="menu-item {% if request.endpoint == 'classes' %}active{% endif %}">
             <i class="fa fa-th-list"></i> Classes
         </a>
-
         <a href="{{ url_for('streams') }}"
            class="menu-item {% if request.endpoint == 'streams' %}active{% endif %}">
             <i class="fa fa-sitemap"></i> Streams
         </a>
-
         <a href="{{ url_for('staff_list') }}"
            class="menu-item {% if request.endpoint == 'staff_list' %}active{% endif %}">
             <i class="fa fa-vcard-o"></i> Staff
         </a>
-
         <a href="{{ url_for('attendance') }}"
            class="menu-item {% if request.endpoint == 'attendance' %}active{% endif %}">
             <i class="fa fa-check-square-o"></i> Attendance
         </a>
 
         <div class="menu-section">ACADEMICS</div>
-
         <a href="{{ url_for('gradebook') }}"
            class="menu-item {% if request.endpoint == 'gradebook' %}active{% endif %}">
             <i class="fa fa-book"></i> Gradebook
         </a>
-
         <a href="{{ url_for('results_edit') }}"
            class="menu-item {% if request.endpoint == 'results_edit' %}active{% endif %}">
             <i class="fa fa-pencil-square"></i> Edit Results
         </a>
-
         <a href="{{ url_for('results_viewer') }}"
            class="menu-item {% if request.endpoint == 'results_viewer' %}active{% endif %}">
             <i class="fa fa-table"></i> Results Viewer
         </a>
-
         <a href="{{ url_for('marklist_select') }}"
            class="menu-item {% if 'marklist' in (request.endpoint or '') %}active{% endif %}">
             <i class="fa fa-list-alt"></i> Marklist
         </a>
-
         <a href="{{ url_for('reports') }}"
            class="menu-item {% if request.endpoint == 'reports' %}active{% endif %}">
             <i class="fa fa-file-pdf-o"></i> Report Cards
@@ -305,21 +283,17 @@
 
         {% if current_user.role == 'admin' %}
         <div class="menu-section">ADMIN</div>
-
         <a href="{{ url_for('import_excel') }}"
            class="menu-item {% if request.endpoint == 'import_excel' %}active{% endif %}">
             <i class="fa fa-upload"></i> Import Excel
         </a>
-
         <a href="{{ url_for('notifications_send') }}"
            class="menu-item {% if request.endpoint == 'notifications_send' %}active{% endif %}">
             <i class="fa fa-paper-plane"></i> Notify Parents
         </a>
         {% endif %}
-
         {% endif %}
 
-        {# ================= PARENT ================= #}
         {% if current_user.role == 'parent' %}
         <div class="menu-section">PARENT</div>
         <a href="{{ url_for('parent.dashboard') }}" class="menu-item">
@@ -327,7 +301,6 @@
         </a>
         {% endif %}
 
-        {# ================= PUPIL ================= #}
         {% if current_user.role == 'pupil' %}
         <div class="menu-section">PUPIL</div>
         <a href="{{ url_for('auth.pupil_portal') }}" class="menu-item">
@@ -354,27 +327,23 @@
 
 <main class="main-workspace" id="workspaceNode">
 
-    {# ================= PAYMENT BANNER ================= #}
     {% if current_user.is_authenticated and current_user.school and current_user.role in ('admin', 'teacher') %}
       {% if current_user.school.payment_status == 'pending' %}
-        <div style="background:#fef3c7; border:2px solid #d97706; color:#92400e; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-weight:700; font-size:13px;">
+        <div style="background:#fef3c7; border:2px solid #d97706; color:#92400e; padding:12px 14px; border-radius:10px; margin-bottom:14px; font-weight:700; font-size:12.5px;">
           <i class="fa fa-exclamation-triangle"></i>
-          <strong>Payment Reminder:</strong>
-          TZS {{ "{:,}".format(current_user.school.monthly_fee or 70000) }} due
-          {% if current_user.school.next_due_at %} by {{ current_user.school.next_due_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}.
+          <strong>Payment Reminder:</strong> TZS {{ "{:,}".format(current_user.school.monthly_fee or 70000) }} due.
           Token: <code style="background:#fff; padding:2px 6px; border-radius:4px;">{{ current_user.school.payment_token }}</code>
         </div>
       {% elif current_user.school.payment_status == 'overdue' %}
-        <div style="background:#fee2e2; border:2px solid #dc2626; color:#991b1b; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-weight:700; font-size:13px;">
-          <i class="fa fa-ban"></i>
-          <strong>OVERDUE PAYMENT:</strong> Token: <code>{{ current_user.school.payment_token }}</code>. Please pay immediately.
+        <div style="background:#fee2e2; border:2px solid #dc2626; color:#991b1b; padding:12px 14px; border-radius:10px; margin-bottom:14px; font-weight:700; font-size:12.5px;">
+          <i class="fa fa-ban"></i> <strong>OVERDUE:</strong> Please pay immediately.
         </div>
       {% endif %}
     {% endif %}
 
     {% if current_user.is_authenticated %}
     <div class="top-bar">
-        <div style="display:flex; align-items:center; gap:12px; min-width: 0;">
+        <div style="display:flex; align-items:center; gap:10px; min-width: 0; flex: 1;">
             <button type="button" class="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">
                 <span class="hamburger-line"></span>
                 <span class="hamburger-line"></span>
@@ -384,9 +353,11 @@
                 {% block page_title_full %}Dashboard{% endblock %}
             </h2>
         </div>
-        <div style="font-size:12.5px; color:#64748b; font-weight:700; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div style="font-size:12px; color:#64748b; font-weight:700; display:flex; align-items:center; gap:6px;">
             <i class="fa fa-user-circle"></i>
-            {{ current_user.full_name or current_user.username }}
+            <span style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                {{ current_user.full_name or current_user.username }}
+            </span>
             <span class="badge bg-primary">{{ current_user.role }}</span>
         </div>
     </div>
@@ -394,7 +365,7 @@
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, msg in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" style="font-size:13.5px;">
+        <div class="alert alert-{{ category }} alert-dismissible fade show" style="font-size:13px;">
             {{ msg }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -409,7 +380,6 @@ function toggleSidebar() {
     var s = document.getElementById('sidebarNode');
     var overlay = document.getElementById('sidebarOverlay');
     if (!s) return;
-
     if (window.innerWidth >= 992) {
         s.classList.toggle('collapsed');
         var w = document.getElementById('workspaceNode');
@@ -436,7 +406,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.innerWidth < 992) closeSidebar();
         });
     }
-
     var lastWidth = window.innerWidth;
     window.addEventListener('resize', function() {
         var curWidth = window.innerWidth;
@@ -449,10 +418,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         lastWidth = curWidth;
     });
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/static/sw.js').catch(function(){});
-    }
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
