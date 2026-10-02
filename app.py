@@ -1,4 +1,6 @@
-﻿from flask import (Flask, render_template, redirect, url_for, flash,
+from werkzeug.security import generate_password_hash
+from bootstrap_dev import ensure_developer_exists
+from flask import (Flask, render_template, redirect, url_for, flash,
                    request, abort, Blueprint, jsonify)
 from flask_login import LoginManager, login_required, current_user
 from datetime import datetime, date
@@ -1686,9 +1688,17 @@ def listusers(token):
 # ===================== END FORCE RESET =====================
 
 
+
+# --- AUTO BOOTSTRAP DEVELOPER ---
+try:
+    ensure_developer_exists(app, db, User, generate_password_hash)
+except Exception as _e:
+    print(f"Bootstrap skipped: {_e}")
+# --- END BOOTSTRAP ---
 if __name__ == '__main__':
     print("=" * 50)
     print(" School Management System - Starting")
     print(" Open: http://localhost:5000/login")
     print("=" * 50)
     app.run(debug=True, host='0.0.0.0', port=5000)
+
