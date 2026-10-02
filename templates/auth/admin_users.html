@@ -1,0 +1,183 @@
+﻿{% extends "base.html" %}
+{% block page_title %}Manage Users{% endblock %}
+{% block content %}
+
+<h2 class="fw-bold" style="color:#0284c7;">
+    <i class="fa fa-users"></i> Manage Users — {{ current_user.school.name if current_user.school else '' }}
+</h2>
+<p class="text-muted">Create teachers, parents, and reset their passwords.</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, msg in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show">
+        {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+{% endwith %}
+
+<!-- Create User -->
+<div class="card-modern mb-4" style="border-left:5px solid #0284c7;">
+    <h5 style="font-weight:800; color:#0284c7;"><i class="fa fa-user-plus"></i> Create Teacher or Parent</h5>
+    <form method="POST" class="row g-3 mt-2">
+        <div class="col-md-4">
+            <label class="small fw-bold">Email or Phone *</label>
+            <input name="contact" class="form-control" required placeholder="teacher@school.com">
+        </div>
+        <div class="col-md-4">
+            <label class="small fw-bold">Full Name</label>
+            <input name="full_name" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="small fw-bold">Role</label>
+            <select name="role" class="form-select">
+                <option value="teacher">Teacher</option>
+                <option value="parent">Parent</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-primary w-100"><i class="fa fa-plus"></i> Create</button>
+        </div>
+    </form>
+    <p class="text-muted small mb-0 mt-2">
+        <i class="fa fa-info-circle"></i> Default password: <strong>Myschool@123</strong>
+    </p>
+</div>
+
+<!-- Teachers -->
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card-modern">
+            <h5 style="font-weight:800; color:#1e3a8a;">
+                <i class="fa fa-vcard-o"></i> Teachers ({{ teachers|length }})
+            </h5>
+            <table class="table table-sm mt-3">
+                <thead>
+                    <tr><th>Login</th><th>Name</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for u in teachers %}
+                    <tr>
+                        <td><strong>{{ u.username }}</strong></td>
+                        <td>{{ u.full_name or '-' }}</td>
+                        <td>
+                            {% if u.is_active_flag %}<span class="badge bg-success">Active</span>
+                            {% else %}<span class="badge bg-secondary">Off</span>{% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-warning"
+                                    data-bs-toggle="modal" data-bs-target="#resetModal{{ u.id }}">
+                                <i class="fa fa-key"></i> Reset PW
+                            </button>
+                            <a href="{{ url_for('auth.toggle_user', user_id=u.id) }}" class="btn btn-sm btn-secondary">
+                                <i class="fa fa-power-off"></i>
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- Reset password modal -->
+                    <div class="modal fade" id="resetModal{{ u.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form method="POST" action="{{ url_for('auth.admin_user_reset', user_id=u.id) }}">
+                                    <div class="modal-header" style="background:#d97706; color:#fff;">
+                                        <h5 class="modal-title">Reset Password — {{ u.username }}</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <label class="fw-bold">New Password</label>
+                                        <input type="text" name="new_password" class="form-control"
+                                               value="Myschool@123" required>
+                                        <small class="text-muted">
+                                            The user will be required to change this on next login.
+                                        </small>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-warning">
+                                            <i class="fa fa-check"></i> Reset
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted">No teachers yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Parents -->
+    <div class="col-md-6">
+        <div class="card-modern">
+            <h5 style="font-weight:800; color:#1e3a8a;">
+                <i class="fa fa-users"></i> Parents ({{ parents|length }})
+            </h5>
+            <table class="table table-sm mt-3">
+                <thead>
+                    <tr><th>Login</th><th>Name</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for u in parents %}
+                    <tr>
+                        <td><strong>{{ u.username }}</strong></td>
+                        <td>{{ u.full_name or '-' }}</td>
+                        <td>
+                            {% if u.is_active_flag %}<span class="badge bg-success">Active</span>
+                            {% else %}<span class="badge bg-secondary">Off</span>{% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-warning"
+                                    data-bs-toggle="modal" data-bs-target="#resetModal{{ u.id }}">
+                                <i class="fa fa-key"></i> Reset PW
+                            </button>
+                            <a href="{{ url_for('auth.toggle_user', user_id=u.id) }}" class="btn btn-sm btn-secondary">
+                                <i class="fa fa-power-off"></i>
+                            </a>
+                        </td>
+                    </tr>
+
+                    <div class="modal fade" id="resetModal{{ u.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form method="POST" action="{{ url_for('auth.admin_user_reset', user_id=u.id) }}">
+                                    <div class="modal-header" style="background:#d97706; color:#fff;">
+                                        <h5 class="modal-title">Reset Password — {{ u.username }}</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <label class="fw-bold">New Password</label>
+                                        <input type="text" name="new_password" class="form-control"
+                                               value="Myschool@123" required>
+                                        <small class="text-muted">User must change on next login.</small>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-warning">
+                                            <i class="fa fa-check"></i> Reset
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted">No parents yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pupil Login Info -->
+<div class="card-modern mt-4">
+    <h5 style="font-weight:800;"><i class="fa fa-child"></i> Pupil Logins</h5>
+    <p class="text-muted small mb-0">
+        Pupil logins are created from the pupil edit page. To reset a pupil's password,
+        use <strong>Edit Results</strong> or ask the developer.
+    </p>
+</div>
+
+{% endblock %}

@@ -89,7 +89,6 @@
         border-radius: 6px; font-family: monospace; font-weight: 700; font-size: 12px;
     }
 
-    /* ---- CARD ACTION BUTTONS ---- */
     .card-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -108,19 +107,30 @@
     .btn-toggle  { background: #64748b; }
     .btn-admin   { background: #7c3aed; grid-column: span 2; }
 
-    .admin-chip {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: #f3e8ff; color: #6d28d9;
-        padding: 4px 10px; border-radius: 16px;
-        font-size: 11.5px; font-weight: 700; margin: 2px 4px 2px 0;
+    .admin-row {
+        display: flex; justify-content: space-between; align-items: center;
+        background: #f3e8ff; border-radius: 8px;
+        padding: 6px 10px; margin: 4px 0;
+        font-size: 12px;
     }
+    .admin-row .name { font-weight: 700; color: #6d28d9; }
+    .admin-row .acts { display: flex; gap: 4px; }
+    .admin-btn {
+        background: none; border: none; cursor: pointer;
+        padding: 3px 6px; border-radius: 5px;
+        font-size: 12px; line-height: 1;
+    }
+    .admin-btn:hover { background: rgba(0,0,0,0.06); }
+    .admin-btn.edit   { color: #7c3aed; }
+    .admin-btn.reset  { color: #d97706; }
+    .admin-btn.toggle { color: #64748b; }
+    .admin-btn.del    { color: #dc2626; }
 
-    /* Edit admin modal */
     .edit-admin-modal .modal-header { background: linear-gradient(135deg, #7c3aed, #4c1d95); color: #fff; }
     .edit-admin-modal .modal-header .btn-close { filter: invert(1); }
 </style>
 
-<!-- HERO -->
+<!-- ================= HERO ================= -->
 <div class="dev-hero">
     <h1>🛡️ Developer Control Panel</h1>
     <p>Register, edit, and manage schools. Track monthly payments of TZS 70,000 per school.</p>
@@ -146,19 +156,19 @@
   {% endfor %}
 {% endwith %}
 
-<!-- REGISTER / EDIT ADMIN FORM -->
+<!-- ================= REGISTER ADMIN ================= -->
 {% if schools %}
 <div class="action-card">
-    <h3><i class="fa fa-user-shield"></i> Register or Edit Admin</h3>
+    <h3><i class="fa fa-user-shield"></i> Register New Admin</h3>
     <p class="sub">
-        Create a new admin for a school below, OR click the <strong style="color:#7c3aed;">Edit Admin</strong> button on any school card to update an existing one.
+        Create a new admin for an existing school. To <strong>edit</strong> or <strong>reset</strong>
+        an admin's password, use the small buttons under each school's admin list below.
     </p>
-    <form method="POST" action="{{ url_for('auth.developer_admin_new') }}" id="adminForm">
-        <input type="hidden" name="admin_id" id="adminEditId" value="">
+    <form method="POST" action="{{ url_for('auth.developer_admin_new') }}">
         <div class="form-row">
             <div>
                 <label>School *</label>
-                <select name="school_id" id="adminSchool" required>
+                <select name="school_id" required>
                     <option value="">-- Select School --</option>
                     {% for s in schools %}
                     <option value="{{ s.id }}">{{ s.name }}</option>
@@ -167,19 +177,19 @@
             </div>
             <div>
                 <label>Admin Email or Phone *</label>
-                <input name="contact" id="adminContact" required placeholder="admin@school.com">
+                <input name="contact" required placeholder="admin@school.com">
             </div>
             <div>
                 <label>Admin Full Name</label>
-                <input name="full_name" id="adminName" placeholder="Mr. John Mwangi">
+                <input name="full_name" placeholder="Mr. John Mwangi">
             </div>
             <div>
                 <label>Password</label>
-                <input name="password" id="adminPassword" placeholder="Leave blank to keep">
+                <input name="password" value="Myschool@123">
             </div>
             <div>
-                <button type="submit" id="adminSubmitBtn">
-                    <i class="fa fa-user-plus"></i> <span id="adminSubmitLabel">Create</span>
+                <button type="submit">
+                    <i class="fa fa-user-plus"></i> Create
                 </button>
             </div>
         </div>
@@ -187,11 +197,12 @@
 </div>
 {% endif %}
 
-<!-- SCHOOLS LIST -->
+<!-- ================= SCHOOLS ================= -->
 {% if schools %}
 <h3 style="font-weight:800; color:#1e3a8a; margin: 30px 0 15px 0;">
     <i class="fa fa-university"></i> Registered Schools ({{ schools|length }})
 </h3>
+
 <div class="row g-3">
     {% for s in schools %}
     <div class="col-md-6 col-lg-4">
@@ -230,18 +241,64 @@
 
             <hr>
 
-            <!-- ADMINS LIST -->
+            <!-- ADMINS LIST WITH ACTION BUTTONS -->
             <div style="font-size:12px;">
-                <strong style="color:#7c3aed;">Admins:</strong>
+                <strong style="color:#7c3aed; display:block; margin-bottom:4px;">Admins:</strong>
                 {% set admins = s.users|selectattr('role', 'equalto', 'admin')|list %}
                 {% if admins %}
-                <div style="margin-top:6px;">
-                    {% for a in admins %}
-                    <span class="admin-chip">
-                        <i class="fa fa-user-circle"></i> {{ a.username }}
+                {% for a in admins %}
+                <div class="admin-row">
+                    <span class="name"><i class="fa fa-user-circle"></i> {{ a.username }}</span>
+                    <span class="acts">
+                        <button type="button" class="admin-btn edit" title="Edit"
+                                onclick="editAdmin({{ s.id }}, {{ a.id }}, '{{ a.username }}', '{{ a.full_name or '' }}');">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button type="button" class="admin-btn reset" title="Reset Password"
+                                data-bs-toggle="modal" data-bs-target="#adminResetModal{{ a.id }}">
+                            <i class="fa fa-key"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('auth.developer_admin_toggle', user_id=a.id) }}" style="display:inline;">
+                            <button type="submit" class="admin-btn toggle" title="Toggle Active">
+                                <i class="fa fa-power-off"></i>
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('auth.developer_admin_delete', user_id=a.id) }}"
+                              style="display:inline;" onsubmit="return confirm('Delete admin {{ a.username }}?');">
+                            <button type="submit" class="admin-btn del" title="Delete">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </form>
                     </span>
-                    {% endfor %}
                 </div>
+
+                <!-- Reset password modal for this admin -->
+                <div class="modal fade" id="adminResetModal{{ a.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('auth.developer_admin_reset', user_id=a.id) }}">
+                                <div class="modal-header" style="background:#d97706; color:#fff;">
+                                    <h5 class="modal-title">Reset Password — {{ a.username }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <label class="fw-bold">New Password</label>
+                                    <input type="text" name="new_password" class="form-control"
+                                           value="Myschool@123" required>
+                                    <small class="text-muted">
+                                        The admin must change this on next login.
+                                    </small>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fa fa-check"></i> Reset Password
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
                 {% else %}
                 <span class="text-muted">No admins registered</span>
                 {% endif %}
@@ -249,13 +306,12 @@
 
             <hr>
 
-            <!-- BUTTONS GRID -->
+            <!-- MAIN CARD BUTTONS -->
             <div class="card-actions">
                 <button type="button" class="btn-admin"
                         data-bs-toggle="modal" data-bs-target="#editAdminModal{{ s.id }}">
                     <i class="fa fa-user-shield"></i> Edit Admin
                 </button>
-
                 <a href="{{ url_for('auth.developer_school_edit', school_id=s.id) }}" class="btn-edit">
                     <i class="fa fa-edit"></i> Edit School
                 </a>
@@ -277,40 +333,11 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <i class="fa fa-user-shield"></i> Edit Admins — {{ s.name }}
+                            <i class="fa fa-user-shield"></i> Add or Edit Admin — {{ s.name }}
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        {% set admins = s.users|selectattr('role', 'equalto', 'admin')|list %}
-                        {% if admins %}
-                        <p class="text-muted small">Click the pencil to load an admin into the form below.</p>
-                        {% for a in admins %}
-                        <div style="border:1px solid #e2e8f0; border-radius:10px; padding:12px; margin-bottom:10px; background:#f8fafc;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div style="font-weight:800; color:#1e3a8a;">
-                                        <i class="fa fa-user-circle"></i> {{ a.username }}
-                                    </div>
-                                    <div style="font-size:12px; color:#64748b;">
-                                        {{ a.full_name or '(no name)' }}
-                                        {% if a.is_active_flag %}<span class="badge bg-success">Active</span>
-                                        {% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-warning"
-                                        onclick="fillAdminEdit({{ s.id }}, {{ a.id }}, '{{ a.username }}', '{{ a.full_name or '' }}');">
-                                    <i class="fa fa-pencil"></i> Edit
-                                </button>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        {% else %}
-                        <div class="alert alert-warning">No admins for this school yet. Create one below.</div>
-                        {% endif %}
-
-                        <hr>
-
                         <h6 style="font-weight:800; color:#7c3aed;" id="formTitle{{ s.id }}">
                             <i class="fa fa-plus-circle"></i> Add New Admin
                         </h6>
@@ -391,7 +418,7 @@
 {% endif %}
 
 <script>
-function fillAdminEdit(schoolId, adminId, contact, name) {
+function editAdmin(schoolId, adminId, contact, name) {
     document.getElementById('adminId' + schoolId).value = adminId;
     document.getElementById('contact' + schoolId).value = contact;
     document.getElementById('name' + schoolId).value = name;
@@ -399,8 +426,13 @@ function fillAdminEdit(schoolId, adminId, contact, name) {
     var title = document.getElementById('formTitle' + schoolId);
     title.innerHTML = '<i class="fa fa-pencil"></i> Editing: ' + contact;
     title.style.color = '#d97706';
-    document.getElementById('contact' + schoolId).scrollIntoView({behavior:'smooth', block:'center'});
-    document.getElementById('contact' + schoolId).focus();
+
+    // Open the modal for this school
+    var modalEl = document.getElementById('editAdminModal' + schoolId);
+    if (modalEl && window.bootstrap) {
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
 }
 </script>
 

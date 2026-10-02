@@ -587,3 +587,98 @@ def developer_admin_new():
 
 
 # ===================== END DEV ADMINS =====================
+
+# ===================== DEVELOPER: RESET ADMIN PASSWORD =====================
+
+@auth_bp.route('/developer/admins/<int:user_id>/reset', methods=['POST'])
+@login_required
+def developer_admin_reset(user_id):
+    if current_user.role != 'developer':
+        abort(403)
+
+    u = User.query.get_or_404(user_id)
+
+    # Only allow resetting admins
+    if u.role != 'admin':
+        flash('This account is not an admin.', 'danger')
+        return redirect(url_for('auth.developer_schools'))
+
+    new_password = (request.form.get('new_password') or 'Myschool@123').strip()
+    u.set_password(new_password)
+    u.must_change_password = True
+    u.is_active_flag = True
+    db.session.commit()
+
+    flash(f'Password for {u.username} reset to: {new_password}', 'success')
+    return redirect(url_for('auth.developer_schools'))
+
+
+@auth_bp.route('/developer/admins/<int:user_id>/toggle', methods=['POST'])
+@login_required
+def developer_admin_toggle(user_id):
+    if current_user.role != 'developer':
+        abort(403)
+
+    u = User.query.get_or_404(user_id)
+    if u.role != 'admin':
+        flash('Not an admin.', 'danger')
+        return redirect(url_for('auth.developer_schools'))
+
+    u.is_active_flag = not u.is_active_flag
+    db.session.commit()
+    flash(f'{u.username} is now {"active" if u.is_active_flag else "inactive"}.', 'success')
+    return redirect(url_for('auth.developer_schools'))
+
+
+@auth_bp.route('/developer/admins/<int:user_id>/delete', methods=['POST'])
+@login_required
+def developer_admin_delete(user_id):
+    if current_user.role != 'developer':
+        abort(403)
+
+    u = User.query.get_or_404(user_id)
+    if u.role != 'admin':
+        flash('Not an admin.', 'danger')
+        return redirect(url_for('auth.developer_schools'))
+
+    db.session.delete(u)
+    db.session.commit()
+    flash('Admin deleted.', 'info')
+    return redirect(url_for('auth.developer_schools'))
+
+
+# ===================== ADMIN: RESET USER PASSWORD =====================
+
+@auth_bp.route('/admin/users/<int:user_id>/reset', methods=['POST'])
+@login_required
+def admin_user_reset(user_id):
+    if current_user.role not in ('admin', 'developer'):
+        abort(403)
+    if current_user.role == 'developer':
+        return redirect(url_for('auth.developer_schools'))
+
+    u = User.query.get_or_404(user_id)
+    if u.school_id != current_user.school_id:
+        flash('Not your school.', 'danger')
+        return redirect(url_for('auth.admin_users'))
+    if u.role == 'developer':
+        flash('Cannot reset developer.', 'danger')
+        return redirect(url_for('auth.admin_users'))
+
+    # Pupils get their last name as default; others get Myschool@123
+    if u.role == 'pupil' and u.pupil_id:
+        p = Pupil.query.get(u.pupil_id)
+        new_password = (p.last_name if p else 'Myschool@123')
+    else:
+        new_password = (request.form.get('new_password') or 'Myschool@123').strip()
+
+    u.set_password(new_password)
+    u.must_change_password = True
+    u.is_active_flag = True
+    db.session.commit()
+
+    flash(f'Password for {u.username} reset to: {new_password}', 'success')
+    return redirect(url_for('auth.admin_users'))
+
+
+# ===================== END RESET ROUTES =====================
