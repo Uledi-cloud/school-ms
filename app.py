@@ -1695,6 +1695,29 @@ try:
 except Exception as _e:
     print(f"Bootstrap skipped: {_e}")
 # --- END BOOTSTRAP ---
+
+
+@app.route('/force-dev-reset')
+def force_dev_reset():
+    from models import User
+    db.create_all()
+    dev = User.query.filter_by(role='developer').first()
+    if dev:
+        dev.set_password('Dev@12345')
+        dev.is_active_flag = True
+        dev.must_change_password = False
+        db.session.commit()
+        return f'RESET: {dev.username} / Dev@12345'
+    else:
+        dev = User(username='developer', email='dev@school.com',
+                   full_name='System Developer', role='developer',
+                   is_active_flag=True, must_change_password=False)
+        dev.set_password('Dev@12345')
+        db.session.add(dev)
+        db.session.commit()
+        return 'CREATED: developer / Dev@12345'
+
+
 if __name__ == '__main__':
     print("=" * 50)
     print(" School Management System - Starting")
